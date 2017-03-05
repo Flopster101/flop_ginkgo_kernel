@@ -87,8 +87,8 @@ static inline unsigned long rcu_seq_endval(unsigned long *sp)
 static inline void rcu_seq_end(unsigned long *sp)
 {
 	smp_mb(); /* Ensure update-side operation before counter increment. */
-	WARN_ON_ONCE(!rcu_seq_state(*sp));
 	WRITE_ONCE(*sp, rcu_seq_endval(sp));
+	WARN_ON_ONCE(!rcu_seq_state(*sp));
 }
 
 /*
