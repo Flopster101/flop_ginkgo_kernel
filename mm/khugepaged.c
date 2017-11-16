@@ -1319,7 +1319,7 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
 				/* assume page table is clear */
 				_pmd = pmdp_collapse_flush(vma, addr, pmd);
 				spin_unlock(ptl);
-				atomic_long_dec(&mm->nr_ptes);
+				mm_dec_nr_ptes(vma->vm_mm);
 				vm_write_end(vma);
 				tlb_remove_table_sync_one();
 				pte_free(mm, pmd_pgtable(_pmd));
