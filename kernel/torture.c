@@ -579,17 +579,21 @@ static int stutter;
  */
 bool stutter_wait(const char *title)
 {
+	int spt;
+
 	cond_resched_tasks_rcu_qs();
-	while (READ_ONCE(stutter_pause_test)) {
-		if (stutter_pause_test)
-			if (READ_ONCE(stutter_pause_test) == 1)
-				schedule_timeout_interruptible(1);
-			else
-				while (READ_ONCE(stutter_pause_test))
-					cond_resched();
-		else
+	spt = READ_ONCE(stutter_pause_test);
+	while (spt) {
+		if (spt == 1) {
+			schedule_timeout_interruptible(1);
+		} else if (spt == 2) {
+			while (READ_ONCE(stutter_pause_test))
+				cond_resched();
+		} else {
 			schedule_timeout_interruptible(round_jiffies_relative(HZ));
+		}
 		torture_shutdown_absorb(title);
+		spt = READ_ONCE(stutter_pause_test);
 	}
 	return !!spt;
 }
@@ -603,17 +607,15 @@ static int torture_stutter(void *arg)
 {
 	VERBOSE_TOROUT_STRING("torture_stutter task started");
 	do {
-		if (!torture_must_stop()) {
-			if (stutter > 1) {
-				schedule_timeout_interruptible(stutter - 1);
-				WRITE_ONCE(stutter_pause_test, 2);
-			}
-			schedule_timeout_interruptible(1);
+		if (!torture_must_stop() && stutter > 1) {
 			WRITE_ONCE(stutter_pause_test, 1);
+			schedule_timeout_interruptible(stutter - 1);
+			WRITE_ONCE(stutter_pause_test, 2);
+			schedule_timeout_interruptible(1);
 		}
+		WRITE_ONCE(stutter_pause_test, 0);
 		if (!torture_must_stop())
 			schedule_timeout_interruptible(stutter);
-		WRITE_ONCE(stutter_pause_test, 0);
 		torture_shutdown_absorb("torture_stutter");
 	} while (!torture_must_stop());
 	torture_kthread_stopping("torture_stutter");
