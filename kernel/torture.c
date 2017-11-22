@@ -583,7 +583,7 @@ bool stutter_wait(const char *title)
 
 	cond_resched_tasks_rcu_qs();
 	spt = READ_ONCE(stutter_pause_test);
-	while (spt) {
+	for (; spt; spt = READ_ONCE(stutter_pause_test)) {
 		if (spt == 1) {
 			schedule_timeout_interruptible(1);
 		} else if (spt == 2) {
@@ -593,7 +593,6 @@ bool stutter_wait(const char *title)
 			schedule_timeout_interruptible(round_jiffies_relative(HZ));
 		}
 		torture_shutdown_absorb(title);
-		spt = READ_ONCE(stutter_pause_test);
 	}
 	return !!spt;
 }
