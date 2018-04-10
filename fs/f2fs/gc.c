@@ -1758,7 +1758,7 @@ int f2fs_gc(struct f2fs_sb_info *sbi, struct f2fs_gc_control *gc_control)
 	struct cp_control cpc;
 	struct gc_inode_list gc_list = {
 		.ilist = LIST_HEAD_INIT(gc_list.ilist),
-		.iroot = RADIX_TREE_INIT(GFP_NOFS),
+		.iroot = RADIX_TREE_INIT(gc_list.iroot, GFP_NOFS),
 	};
 	unsigned int skipped_round = 0, round = 0;
 
@@ -1960,7 +1960,7 @@ static int free_segment_range(struct f2fs_sb_info *sbi,
 	for (segno = start; segno <= end; segno += sbi->segs_per_sec) {
 		struct gc_inode_list gc_list = {
 			.ilist = LIST_HEAD_INIT(gc_list.ilist),
-			.iroot = RADIX_TREE_INIT(GFP_NOFS),
+			.iroot = RADIX_TREE_INIT(gc_list.iroot, GFP_NOFS),
 		};
 
 		do_garbage_collect(sbi, segno, &gc_list, FG_GC, true);
