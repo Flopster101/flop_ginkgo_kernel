@@ -461,8 +461,9 @@ static int32_t cam_flash_platform_probe(struct platform_device *pdev)
 		}
 
 		fctrl->i2c_data.per_frame = (struct i2c_settings_array *)
-			kzalloc(sizeof(struct i2c_settings_array) *
-			MAX_PER_FRAME_ARRAY, GFP_KERNEL);
+			kcalloc(MAX_PER_FRAME_ARRAY,
+				sizeof(struct i2c_settings_array),
+				GFP_KERNEL);
 		if (fctrl->i2c_data.per_frame == NULL) {
 			CAM_ERR(CAM_FLASH, "No Memory");
 			rc = -ENOMEM;
@@ -565,8 +566,9 @@ static int32_t cam_flash_i2c_driver_probe(struct i2c_client *client,
 
 	fctrl->i2c_data.per_frame =
 		(struct i2c_settings_array *)
-		kzalloc(sizeof(struct i2c_settings_array) *
-		MAX_PER_FRAME_ARRAY, GFP_KERNEL);
+		kcalloc(MAX_PER_FRAME_ARRAY,
+			sizeof(struct i2c_settings_array),
+			GFP_KERNEL);
 	if (fctrl->i2c_data.per_frame == NULL) {
 		rc = -ENOMEM;
 		goto unreg_subdev;
