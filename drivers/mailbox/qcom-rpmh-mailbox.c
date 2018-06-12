@@ -1079,8 +1079,9 @@ static int rsc_drv_probe(struct platform_device *pdev)
 		tcs->tcs_offset = st;
 		st += tcs->num_tcs;
 
-		tcs->cmd_addr = devm_kzalloc(&pdev->dev, sizeof(u32) *
-					tcs->num_tcs * tcs->ncpt, GFP_KERNEL);
+		tcs->cmd_addr = devm_kzalloc(&pdev->dev,
+					     array3_size(sizeof(u32), tcs->num_tcs, tcs->ncpt),
+					     GFP_KERNEL);
 		if (!tcs->cmd_addr)
 			return -ENOMEM;
 
@@ -1108,7 +1109,7 @@ static int rsc_drv_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	chans = devm_kzalloc(&pdev->dev, num_chans * sizeof(*chans),
+	chans = devm_kcalloc(&pdev->dev, num_chans, sizeof(*chans),
 				GFP_KERNEL);
 	if (!chans)
 		return -ENOMEM;
