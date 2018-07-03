@@ -118,8 +118,8 @@
 		vdd-supply = <&gpu_gx_gdsc>;
 
 		/* CPU latency parameter */
-		qcom,pm-qos-active-latency = <40>;
-		qcom,pm-qos-wakeup-latency = <40>;
+		qcom,pm-qos-active-latency = <43>;
+		qcom,pm-qos-wakeup-latency = <43>;
 
 		/* Enable context aware freq. scaling */
 		qcom,enable-ca-jump;
