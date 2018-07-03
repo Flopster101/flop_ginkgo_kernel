@@ -1010,7 +1010,7 @@
 
 		/* PM QoS */
 		qcom,pm-qos-cpu-groups = <0x0f 0xf0>;
-		qcom,pm-qos-cpu-group-latency-us = <26 26>;
+		qcom,pm-qos-cpu-group-latency-us = <43 43>;
 		qcom,pm-qos-default-cpu = <0>;
 
 		pinctrl-names = "dev-reset-assert", "dev-reset-deassert";
@@ -1663,7 +1663,7 @@
 
 				msm_cdsp_rm: qcom,msm_cdsp_rm {
 					compatible = "qcom,msm-cdsp-rm";
-					qcom,qos-latency-us = <44>;
+					qcom,qos-latency-us = <43>;
 					qcom,qos-maxhold-ms = <20>;
 					#cooling-cells = <2>;
 				};
@@ -2188,10 +2188,10 @@
 
 		/* PM QoS */
 		qcom,pm-qos-irq-type = "affine_irq";
-		qcom,pm-qos-irq-latency = <40 40>;
+		qcom,pm-qos-irq-latency = <43 43>;
 		qcom,pm-qos-cpu-groups = <0x0f 0xf0>;
-		qcom,pm-qos-cmdq-latency-us = <40 40>, <40 40>;
-		qcom,pm-qos-legacy-latency-us = <40 40>, <40 40>;
+		qcom,pm-qos-cmdq-latency-us = <43 43>, <43 43>;
+		qcom,pm-qos-legacy-latency-us = <43 43>, <43 43>;
 
 		qcom,scaling-lower-bus-speed-mode = "DDR52";
 
@@ -2260,9 +2260,9 @@
 
 		/* PM QoS */
 		qcom,pm-qos-irq-type = "affine_irq";
-		qcom,pm-qos-irq-latency = <40 40>;
+		qcom,pm-qos-irq-latency = <43 43>;
 		qcom,pm-qos-cpu-groups = <0x0f 0xf0>;
-		qcom,pm-qos-legacy-latency-us = <40 40>, <40 40>;
+		qcom,pm-qos-legacy-latency-us = <43 43>, <43 43>;
 
 		clocks = <&clock_gcc GCC_SDCC2_AHB_CLK>,
 			<&clock_gcc GCC_SDCC2_APPS_CLK>;
