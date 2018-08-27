@@ -18,3 +18,4 @@ CFLAGS_xor-neon.o               += -ffreestanding
 endif
 
 lib-$(CONFIG_ARCH_HAS_UACCESS_FLUSHCACHE) += uaccess_flushcache.o
+obj-$(CONFIG_CRC32) += crc32.o
