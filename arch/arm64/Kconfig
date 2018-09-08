@@ -1518,3 +1518,30 @@ source "arch/arm64/crypto/Kconfig"
 endif
 
 source "lib/Kconfig"
+
+menu "Xiaomi configuration options"
+
+config MACH_XIAOMI
+        bool "Xiaomi device"
+        depends on ARCH_QCOM
+        help
+          Support for Xiaomi products
+
+config MACH_XIAOMI_TRINKET
+        bool "Xiaomi TRINKET"
+        depends on ARCH_TRINKET
+        select MACH_XIAOMI
+        help
+          Support for Trinket-based Xiaomi variants
+
+menu "Xiaomi board selection"
+
+config MACH_XIAOMI_C3J
+        bool "ginkgo board"
+        select MACH_XIAOMI_TRINKET
+        help
+          Support for Xiaomi Redmi Note 8
+
+endmenu
+
+endmenu
