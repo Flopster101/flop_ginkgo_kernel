@@ -63,7 +63,7 @@
 		qcom,chipid = <0x06010000>;
 
 		qcom,initial-pwrlevel = <6>;
-		qcom,idle-timeout = <80>;
+		qcom,idle-timeout = <64>;
 
 		qcom,ubwc-mode = <1>;
 		qcom,min-access-length = <64>;
