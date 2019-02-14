@@ -4363,10 +4363,11 @@ void __init lockdep_info(void)
 	       (sizeof(lock_classes) +
 		sizeof(classhash_table) +
 		sizeof(list_entries) +
-		sizeof(lock_chains) +
 		sizeof(chainhash_table)
 #ifdef CONFIG_PROVE_LOCKING
 		+ sizeof(lock_cq)
+		+ sizeof(lock_chains)
+		+ sizeof(chain_hlocks)
 #endif
 		) / 1024
 		);
