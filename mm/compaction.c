@@ -810,6 +810,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 			unsigned long end_pfn, isolate_mode_t isolate_mode)
 {
 	struct zone *zone = cc->zone;
+	pg_data_t *pgdat = zone->zone_pgdat;
 	unsigned long nr_scanned = 0, nr_isolated = 0;
 	struct lruvec *lruvec;
 	unsigned long flags = 0;
@@ -874,7 +875,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 		 * a fatal signal is pending.
 		 */
 		if (!(low_pfn % SWAP_CLUSTER_MAX)
-		    && compact_unlock_should_abort(zone_lru_lock(zone), flags,
+		    && compact_unlock_should_abort(&pgdat->lru_lock, flags,
 								&locked, cc)) {
 			low_pfn = 0;
 			goto fatal_pending;
@@ -947,7 +948,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 			if (unlikely(__PageMovable(page)) &&
 					!PageIsolated(page)) {
 				if (locked) {
-					spin_unlock_irqrestore(zone_lru_lock(zone),
+					spin_unlock_irqrestore(&pgdat->lru_lock,
 									flags);
 					locked = false;
 				}
@@ -977,7 +978,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 
 		/* If we already hold the lock, we can skip some rechecking */
 		if (!locked) {
-			locked = compact_lock_irqsave(zone_lru_lock(zone),
+			locked = compact_lock_irqsave(&pgdat->lru_lock,
 								&flags, cc);
 
 			/* Try get exclusive access under lock */
@@ -1002,7 +1003,7 @@ isolate_migratepages_block(struct compact_control *cc, unsigned long low_pfn,
 			}
 		}
 
-		lruvec = mem_cgroup_page_lruvec(page, zone->zone_pgdat);
+		lruvec = mem_cgroup_page_lruvec(page, pgdat);
 
 		/* Try isolate the page */
 		if (__isolate_lru_page(page, isolate_mode) != 0)
@@ -1044,7 +1045,7 @@ isolate_fail:
 		 */
 		if (nr_isolated) {
 			if (locked) {
-				spin_unlock_irqrestore(zone_lru_lock(zone), flags);
+				spin_unlock_irqrestore(&pgdat->lru_lock, flags);
 				locked = false;
 			}
 			putback_movable_pages(&cc->migratepages);
@@ -1071,7 +1072,7 @@ isolate_fail:
 
 isolate_abort:
 	if (locked)
-		spin_unlock_irqrestore(zone_lru_lock(zone), flags);
+		spin_unlock_irqrestore(&pgdat->lru_lock, flags);
 
 	/*
 	 * Updated the cached scanner pfn once the pageblock has been scanned
