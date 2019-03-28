@@ -1541,19 +1541,19 @@ static void __wake_nocb_leader(struct rcu_data *rdp, bool force,
 			       unsigned long flags)
 	__releases(rdp->nocb_lock)
 {
-	struct rcu_data *rdp_leader = rdp->nocb_leader;
+	struct rcu_data *rdp_leader = rdp->nocb_gp_rdp;
 
 	lockdep_assert_held(&rdp->nocb_lock);
-	if (!READ_ONCE(rdp_leader->nocb_kthread)) {
+	if (!READ_ONCE(rdp_leader->nocb_cb_kthread)) {
 		raw_spin_unlock_irqrestore(&rdp->nocb_lock, flags);
 		return;
 	}
-	if (rdp_leader->nocb_leader_sleep || force) {
+	if (rdp_leader->nocb_gp_sleep || force) {
 		/* Prior smp_mb__after_atomic() orders against prior enqueue. */
-		WRITE_ONCE(rdp_leader->nocb_leader_sleep, false);
+		WRITE_ONCE(rdp_leader->nocb_gp_sleep, false);
 		del_timer(&rdp->nocb_timer);
 		raw_spin_unlock_irqrestore(&rdp->nocb_lock, flags);
-		smp_mb(); /* ->nocb_leader_sleep before swake_up(). */
+		smp_mb(); /* ->nocb_gp_sleep before swake_up_one(). */
 		swake_up(&rdp_leader->nocb_wq);
 	} else {
 		raw_spin_unlock_irqrestore(&rdp->nocb_lock, flags);
@@ -1617,10 +1617,10 @@ static bool rcu_nocb_cpu_needs_barrier(int cpu)
 	if (!rhp)
 		rhp = READ_ONCE(rdp->nocb_gp_head);
 	if (!rhp)
-		rhp = READ_ONCE(rdp->nocb_follower_head);
+		rhp = READ_ONCE(rdp->nocb_cb_head);
 
 	/* Having no rcuo kthread but CBs after scheduler starts is bad! */
-	if (!READ_ONCE(rdp->nocb_kthread) && rhp &&
+	if (!READ_ONCE(rdp->nocb_cb_kthread) && rhp &&
 	    rcu_scheduler_fully_active) {
 		/* RCU callback enqueued before CPU first came online??? */
 		pr_err("RCU: Never-onlined no-CBs CPU %d has CB %p\n",
@@ -1659,7 +1659,7 @@ static void __call_rcu_nocb_enqueue(struct rcu_data *rdp,
 	smp_mb__after_atomic(); /* Store *old_rhpp before _wake test. */
 
 	/* If we are not being polled and there is a kthread, awaken it ... */
-	t = READ_ONCE(rdp->nocb_kthread);
+	t = READ_ONCE(rdp->nocb_cb_kthread);
 	if (rcu_nocb_poll || !t) {
 		trace_rcu_nocb_wake(rcu_state.name, rdp->cpu,
 				    TPS("WakeNotPoll"));
@@ -1813,9 +1813,9 @@ wait_again:
 	if (!rcu_nocb_poll) {
 		trace_rcu_nocb_wake(rcu_state.name, my_rdp->cpu, TPS("Sleep"));
 		swait_event_interruptible(my_rdp->nocb_wq,
-				!READ_ONCE(my_rdp->nocb_leader_sleep));
+				!READ_ONCE(my_rdp->nocb_gp_sleep));
 		raw_spin_lock_irqsave(&my_rdp->nocb_lock, flags);
-		my_rdp->nocb_leader_sleep = true;
+		my_rdp->nocb_gp_sleep = true;
 		WRITE_ONCE(my_rdp->nocb_defer_wakeup, RCU_NOCB_WAKE_NOT);
 		del_timer(&my_rdp->nocb_timer);
 		raw_spin_unlock_irqrestore(&my_rdp->nocb_lock, flags);
@@ -1831,7 +1831,7 @@ wait_again:
 	 */
 	gotcbs = false;
 	smp_mb(); /* wakeup and _sleep before ->nocb_head reads. */
-	for (rdp = my_rdp; rdp; rdp = rdp->nocb_next_follower) {
+	for (rdp = my_rdp; rdp; rdp = rdp->nocb_next_cb_rdp) {
 		rdp->nocb_gp_head = READ_ONCE(rdp->nocb_head);
 		if (!rdp->nocb_gp_head)
 			continue;  /* No CBs here, try next follower. */
@@ -1858,12 +1858,12 @@ wait_again:
 	rcu_nocb_wait_gp(my_rdp);
 
 	/* Each pass through the following loop wakes a follower, if needed. */
-	for (rdp = my_rdp; rdp; rdp = rdp->nocb_next_follower) {
+	for (rdp = my_rdp; rdp; rdp = rdp->nocb_next_cb_rdp) {
 		if (!rcu_nocb_poll &&
 		    READ_ONCE(rdp->nocb_head) &&
-		    READ_ONCE(my_rdp->nocb_leader_sleep)) {
+		    READ_ONCE(my_rdp->nocb_gp_sleep)) {
 			raw_spin_lock_irqsave(&my_rdp->nocb_lock, flags);
-			my_rdp->nocb_leader_sleep = false;/* No need to sleep.*/
+			my_rdp->nocb_gp_sleep = false;/* No need to sleep.*/
 			raw_spin_unlock_irqrestore(&my_rdp->nocb_lock, flags);
 		}
 		if (!rdp->nocb_gp_head)
@@ -1871,18 +1871,18 @@ wait_again:
 
 		/* Append callbacks to follower's "done" list. */
 		raw_spin_lock_irqsave(&rdp->nocb_lock, flags);
-		tail = rdp->nocb_follower_tail;
-		rdp->nocb_follower_tail = rdp->nocb_gp_tail;
+		tail = rdp->nocb_cb_tail;
+		rdp->nocb_cb_tail = rdp->nocb_gp_tail;
 		*tail = rdp->nocb_gp_head;
 		raw_spin_unlock_irqrestore(&rdp->nocb_lock, flags);
-		if (rdp != my_rdp && tail == &rdp->nocb_follower_head) {
+		if (rdp != my_rdp && tail == &rdp->nocb_cb_head) {
 			/* List was empty, so wake up the follower.  */
 			swake_up(&rdp->nocb_wq);
 		}
 	}
 
 	/* If we (the leader) don't have CBs, go wait some more. */
-	if (!my_rdp->nocb_follower_head)
+	if (!my_rdp->nocb_cb_head)
 		goto wait_again;
 }
 
@@ -1895,8 +1895,8 @@ static void nocb_follower_wait(struct rcu_data *rdp)
 	for (;;) {
 		trace_rcu_nocb_wake(rcu_state.name, rdp->cpu, TPS("FollowerSleep"));
 		swait_event_interruptible(rdp->nocb_wq,
-					 READ_ONCE(rdp->nocb_follower_head));
-		if (smp_load_acquire(&rdp->nocb_follower_head)) {
+					 READ_ONCE(rdp->nocb_cb_head));
+		if (smp_load_acquire(&rdp->nocb_cb_head)) {
 			/* ^^^ Ensure CB invocation follows _head test. */
 			return;
 		}
@@ -1923,17 +1923,17 @@ static int rcu_nocb_kthread(void *arg)
 	/* Each pass through this loop invokes one batch of callbacks */
 	for (;;) {
 		/* Wait for callbacks. */
-		if (rdp->nocb_leader == rdp)
+		if (rdp->nocb_gp_rdp == rdp)
 			nocb_leader_wait(rdp);
 		else
 			nocb_follower_wait(rdp);
 
 		/* Pull the ready-to-invoke callbacks onto local list. */
 		raw_spin_lock_irqsave(&rdp->nocb_lock, flags);
-		list = rdp->nocb_follower_head;
-		rdp->nocb_follower_head = NULL;
-		tail = rdp->nocb_follower_tail;
-		rdp->nocb_follower_tail = &rdp->nocb_follower_head;
+		list = rdp->nocb_cb_head;
+		rdp->nocb_cb_head = NULL;
+		tail = rdp->nocb_cb_tail;
+		rdp->nocb_cb_tail = &rdp->nocb_cb_head;
 		raw_spin_unlock_irqrestore(&rdp->nocb_lock, flags);
 		if (WARN_ON_ONCE(!list))
 			continue;
@@ -2061,7 +2061,7 @@ static void __init rcu_boot_init_nocb_percpu_data(struct rcu_data *rdp)
 {
 	rdp->nocb_tail = &rdp->nocb_head;
 	init_swait_queue_head(&rdp->nocb_wq);
-	rdp->nocb_follower_tail = &rdp->nocb_follower_head;
+	rdp->nocb_cb_tail = &rdp->nocb_cb_head;
 	raw_spin_lock_init(&rdp->nocb_lock);
 	timer_setup(&rdp->nocb_timer, do_nocb_deferred_wakeup_timer, 0);
 }
@@ -2083,27 +2083,27 @@ static void rcu_spawn_one_nocb_kthread(int cpu)
 	 * If this isn't a no-CBs CPU or if it already has an rcuo kthread,
 	 * then nothing to do.
 	 */
-	if (!rcu_is_nocb_cpu(cpu) || rdp_spawn->nocb_kthread)
+	if (!rcu_is_nocb_cpu(cpu) || rdp_spawn->nocb_cb_kthread)
 		return;
 
 	/* If we didn't spawn the leader first, reorganize! */
-	rdp_old_leader = rdp_spawn->nocb_leader;
-	if (rdp_old_leader != rdp_spawn && !rdp_old_leader->nocb_kthread) {
+	rdp_old_leader = rdp_spawn->nocb_gp_rdp;
+	if (rdp_old_leader != rdp_spawn && !rdp_old_leader->nocb_cb_kthread) {
 		rdp_last = NULL;
 		rdp = rdp_old_leader;
 		do {
-			rdp->nocb_leader = rdp_spawn;
+			rdp->nocb_gp_rdp = rdp_spawn;
 			if (rdp_last && rdp != rdp_spawn)
-				rdp_last->nocb_next_follower = rdp;
+				rdp_last->nocb_next_cb_rdp = rdp;
 			if (rdp == rdp_spawn) {
-				rdp = rdp->nocb_next_follower;
+				rdp = rdp->nocb_next_cb_rdp;
 			} else {
 				rdp_last = rdp;
-				rdp = rdp->nocb_next_follower;
-				rdp_last->nocb_next_follower = NULL;
+				rdp = rdp->nocb_next_cb_rdp;
+				rdp_last->nocb_next_cb_rdp = NULL;
 			}
 		} while (rdp);
-		rdp_spawn->nocb_next_follower = rdp_old_leader;
+		rdp_spawn->nocb_next_cb_rdp = rdp_old_leader;
 	}
 
 	/* Spawn the kthread for this CPU. */
@@ -2111,7 +2111,7 @@ static void rcu_spawn_one_nocb_kthread(int cpu)
 			"rcuo%c/%d", rcu_state.abbr, cpu);
 	if (WARN_ONCE(IS_ERR(t), "%s: Could not start rcuo kthread, OOM is now expected behavior\n", __func__))
 		return;
-	WRITE_ONCE(rdp_spawn->nocb_kthread, t);
+	WRITE_ONCE(rdp_spawn->nocb_cb_kthread, t);
 }
 
 /*
@@ -2171,12 +2171,12 @@ static void __init rcu_organize_nocb_kthreads(void)
 		if (rdp->cpu >= nl) {
 			/* New leader, set up for followers & next leader. */
 			nl = DIV_ROUND_UP(rdp->cpu + 1, ls) * ls;
-			rdp->nocb_leader = rdp;
+			rdp->nocb_gp_rdp = rdp;
 			rdp_leader = rdp;
 		} else {
 			/* Another follower, link to previous leader. */
-			rdp->nocb_leader = rdp_leader;
-			rdp_prev->nocb_next_follower = rdp;
+			rdp->nocb_gp_rdp = rdp_leader;
+			rdp_prev->nocb_next_cb_rdp = rdp;
 		}
 		rdp_prev = rdp;
 	}
