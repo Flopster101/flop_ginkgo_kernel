@@ -2847,6 +2847,12 @@ static void check_chain_key(struct task_struct *curr)
 #endif
 }
 
+static int mark_lock(struct task_struct *curr, struct held_lock *this,
+		     enum lock_usage_bit new_bit);
+
+#if defined(CONFIG_TRACE_IRQFLAGS) && defined(CONFIG_PROVE_LOCKING)
+
+
 static void
 print_usage_bug_scenario(struct held_lock *lock)
 {
@@ -2916,10 +2922,6 @@ valid_state(struct task_struct *curr, struct held_lock *this,
 	return 1;
 }
 
-static int mark_lock(struct task_struct *curr, struct held_lock *this,
-		     enum lock_usage_bit new_bit);
-
-#if defined(CONFIG_TRACE_IRQFLAGS) && defined(CONFIG_PROVE_LOCKING)
 
 /*
  * print irq inversion bug:
