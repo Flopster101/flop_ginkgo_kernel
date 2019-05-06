@@ -288,6 +288,8 @@ extern struct cred init_cred;
 	INIT_PERF_EVENTS(tsk)						\
 	INIT_TRACE_IRQFLAGS						\
 	INIT_LOCKDEP							\
+	INIT_LOCKDEP_DEPTH						\
+	INIT_CURR_CHAIN_KEY						\
 	INIT_FTRACE_GRAPH						\
 	INIT_TRACE_RECURSION						\
 	INIT_TASK_RCU_PREEMPT(tsk)					\
