@@ -279,6 +279,8 @@ extern void lockdep_free_key_range(void *start, unsigned long size);
 extern asmlinkage void lockdep_sys_exit(void);
 extern void lockdep_set_selftest_task(struct task_struct *task);
 
+extern void lockdep_init_task(struct task_struct *task);
+
 extern void lockdep_off(void);
 extern void lockdep_on(void);
 
@@ -378,6 +380,8 @@ extern void lock_repin_lock(struct lockdep_map *lock, struct pin_cookie);
 extern void lock_unpin_lock(struct lockdep_map *lock, struct pin_cookie);
 
 # define INIT_LOCKDEP				.lockdep_recursion = 0,
+# define INIT_LOCKDEP_DEPTH			.lockdep_depth = 0,
+# define INIT_CURR_CHAIN_KEY			.curr_chain_key = 0,
 
 #define lockdep_depth(tsk)	(debug_locks ? (tsk)->lockdep_depth : 0)
 
@@ -404,6 +408,10 @@ extern void lock_unpin_lock(struct lockdep_map *lock, struct pin_cookie);
 #define lockdep_unpin_lock(l,c)	lock_unpin_lock(&(l)->dep_map, (c))
 
 #else /* !CONFIG_LOCKDEP */
+
+static inline void lockdep_init_task(struct task_struct *task)
+{
+}
 
 static inline void lockdep_off(void)
 {
@@ -441,6 +449,8 @@ static inline void lockdep_set_selftest_task(struct task_struct *task)
  */
 
 # define INIT_LOCKDEP
+# define INIT_LOCKDEP_DEPTH
+# define INIT_CURR_CHAIN_KEY
 # define lockdep_reset()		do { debug_locks = 1; } while (0)
 # define lockdep_free_key_range(start, size)	do { } while (0)
 # define lockdep_sys_exit() 			do { } while (0)
@@ -498,7 +508,6 @@ enum xhlock_context_t {
 	{ .name = (_name), .key = (void *)(_key), }
 
 static inline void lockdep_invariant_state(bool force) {}
-static inline void lockdep_init_task(struct task_struct *task) {}
 static inline void lockdep_free_task(struct task_struct *task) {}
 
 #ifdef CONFIG_LOCK_STAT
