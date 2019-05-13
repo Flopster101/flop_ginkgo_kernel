@@ -49,7 +49,7 @@ struct rcu_head *rcu_cblist_dequeue(struct rcu_cblist *rclp);
  */
 static inline bool rcu_segcblist_empty(struct rcu_segcblist *rsclp)
 {
-	return !rsclp->head;
+	return !READ_ONCE(rsclp->head);
 }
 
 /* Return number of callbacks in segmented callback list. */
