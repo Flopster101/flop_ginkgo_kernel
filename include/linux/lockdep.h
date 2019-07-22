@@ -64,10 +64,7 @@ struct lock_class_key {
 
 extern struct lock_class_key __lockdep_no_validate__;
 
-struct lock_trace {
-	unsigned int		nr_entries;
-	unsigned int		offset;
-};
+struct lock_trace;
 
 #define LOCKSTAT_POINTS		4
 
@@ -103,7 +100,7 @@ struct lock_class {
 	 * IRQ/softirq usage tracking bits:
 	 */
 	unsigned long			usage_mask;
-	struct lock_trace		usage_traces[XXX_LOCK_USAGE_STATES];
+	const struct lock_trace		*usage_traces[XXX_LOCK_USAGE_STATES];
 
 	/*
 	 * Generation counter, when doing certain classes of graph walking,
@@ -191,7 +188,7 @@ struct lock_list {
 	struct list_head		entry;
 	struct lock_class		*class;
 	struct lock_class		*links_to;
-	struct lock_trace		trace;
+	const struct lock_trace		*trace;
 	int				distance;
 
 	/*
