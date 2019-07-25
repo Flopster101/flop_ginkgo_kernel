@@ -124,6 +124,7 @@ struct scm_hdcp_req {
 };
 
 extern struct mutex scm_lmh_lock;
+extern bool under_scm_call(void);
 
 #else
 
@@ -185,6 +186,11 @@ static inline bool scm_is_secure_device(void)
 static inline int scm_enable_mem_protection(void)
 {
 	return 0;
+}
+
+extern bool under_scm_call(void)
+{
+	return false;
 }
 #endif
 
