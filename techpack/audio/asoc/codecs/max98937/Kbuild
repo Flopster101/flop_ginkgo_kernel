@@ -109,8 +109,3 @@ endif
 # Module information used by KBuild framework
 obj-$(CONFIG_SND_SOC_MAX98937) += max98937_dlkm.o
 max98937_dlkm-y := $(MAX98937_OBJS)
-
-
-
-# inject some build related information
-DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
