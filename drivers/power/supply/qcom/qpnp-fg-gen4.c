@@ -968,6 +968,16 @@ static int fg_gen4_get_prop_capacity_raw(struct fg_gen4_chip *chip, int *val)
 	return 0;
 }
 
+static int fg_gen4_get_prop_capacity_raw_max(struct fg_gen4_chip *chip, int *val)
+{
+	if (chip->dt.soc_hi_res)
+		*val = 10000;
+	else
+		*val = FULL_SOC_RAW;
+
+	return 0;
+}
+
 static inline void get_esr_meas_current(int curr_ma, u8 *val)
 {
 	switch (curr_ma) {
@@ -4341,6 +4351,9 @@ static int fg_psy_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CAPACITY_RAW:
 		rc = fg_gen4_get_prop_capacity_raw(chip, &pval->intval);
 		break;
+	case POWER_SUPPLY_PROP_CAPACITY_RAW_MAX:
+		rc = fg_gen4_get_prop_capacity_raw_max(chip, &pval->intval);
+		break;
 	case POWER_SUPPLY_PROP_CC_SOC:
 		rc = fg_get_sram_prop(&chip->fg, FG_SRAM_CC_SOC, &val);
 		if (rc < 0) {
@@ -4598,6 +4611,7 @@ static enum power_supply_property fg_psy_props[] = {
 	POWER_SUPPLY_PROP_CAPACITY,
 	POWER_SUPPLY_PROP_REAL_CAPACITY,
 	POWER_SUPPLY_PROP_CAPACITY_RAW,
+	POWER_SUPPLY_PROP_CAPACITY_RAW_MAX,
 	POWER_SUPPLY_PROP_CC_SOC,
 	POWER_SUPPLY_PROP_TEMP,
 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
