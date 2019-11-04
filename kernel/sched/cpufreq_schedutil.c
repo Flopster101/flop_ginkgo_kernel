@@ -11,6 +11,7 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#include <linux/binfmts.h>
 #include <linux/cpufreq.h>
 #include <linux/kthread.h>
 #include <uapi/linux/sched/types.h>
@@ -690,6 +691,9 @@ static ssize_t up_rate_limit_us_store(struct gov_attr_set *attr_set,
 	struct sugov_policy *sg_policy;
 	unsigned int rate_limit_us;
 
+	if (task_is_booster(current))
+		return count;
+
 	if (kstrtouint(buf, 10, &rate_limit_us))
 		return -EINVAL;
 
@@ -709,6 +713,9 @@ static ssize_t down_rate_limit_us_store(struct gov_attr_set *attr_set,
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
 	struct sugov_policy *sg_policy;
 	unsigned int rate_limit_us;
+
+	if (task_is_booster(current))
+		return count;
 
 	if (kstrtouint(buf, 10, &rate_limit_us))
 		return -EINVAL;
@@ -836,6 +843,9 @@ static ssize_t iowait_boost_enable_store(struct gov_attr_set *attr_set,
 {
 	struct sugov_tunables *tunables = to_sugov_tunables(attr_set);
 	bool enable;
+
+	if (task_is_booster(current))
+		return count;
 
 	if (kstrtobool(buf, &enable))
 		return -EINVAL;
@@ -1059,9 +1069,10 @@ static int sugov_init(struct cpufreq_policy *policy)
 	}
 
 	tunables->up_rate_limit_us =
-				cpufreq_policy_transition_delay_us(policy);
+				CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
 	tunables->down_rate_limit_us =
-				cpufreq_policy_transition_delay_us(policy);
+	                        CONFIG_SCHEDUTIL_DOWN_RATE_LIMIT;
+	
 	tunables->hispeed_load = DEFAULT_HISPEED_LOAD;
 	tunables->hispeed_freq = 0;
 
