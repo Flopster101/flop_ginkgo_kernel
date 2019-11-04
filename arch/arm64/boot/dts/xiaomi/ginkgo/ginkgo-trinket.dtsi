@@ -31,3 +31,9 @@
 &sdhc_2 {
 	cd-gpios = <&tlmm 98 0>;
 };
+
+&soc {
+    restart@440b000 {
+        qcom,force-warm-reboot;
+    };
+};
