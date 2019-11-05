@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -163,6 +164,9 @@ struct afe_ctl {
 	/* FTM spk params */
 	uint32_t initial_cal;
 	uint32_t v_vali_flag;
+#ifdef CONFIG_SND_SOC_MAX98937
+	uint8_t *dsm_payload;
+#endif
 };
 
 static atomic_t afe_ports_mad_type[SLIMBUS_PORT_LAST - SLIMBUS_0_RX];
@@ -402,7 +406,17 @@ static int32_t sp_make_afe_callback(uint32_t opcode, uint32_t *payload,
 		expected_size += sizeof(
 				struct afe_sp_rx_tmax_xmax_logging_param);
 		data_dest = (u32 *) &this_afe.xt_logging_resp;
-		break;
+#ifdef CONFIG_SND_SOC_MAX98937
+    case AFE_PARAM_ID_DSM_CFG:
+    case AFE_PARAM_ID_DSM_INFO:
+        expected_size += sizeof(struct afe_dsm_param_array);
+        data_dest     = (u32*) this_afe.dsm_payload;
+	break;
+    case AFE_PARAM_ID_CALIB:
+	expected_size = 76;
+	data_dest     = (u32*) this_afe.dsm_payload;
+        break;
+#endif
 	default:
 		pr_err("%s: Unrecognized param ID %d\n", __func__,
 		       param_hdr.param_id);
@@ -1626,6 +1640,147 @@ fail_cmd:
 		 param_info.param_id, ret);
 	return ret;
 }
+
+#ifdef CONFIG_SND_SOC_MAX98937
+static int afe_dsm_set_params(int port, int module_id, int param_id, uint8_t *payload, int size)
+{
+ 	struct param_hdr_v3 param_info = {0};
+	int ret = -EINVAL;
+
+ 	param_info.module_id = module_id;
+ 	if(port & 0x1) {
+        param_info.instance_id = 0x8000;
+	} else {
+        param_info.instance_id = INSTANCE_ID_0;
+	}
+	param_info.param_id = param_id;
+	param_info.param_size = size;
+
+	ret = q6afe_pack_and_set_param_in_band(port,
+					       q6audio_get_port_index(port),
+					       param_info, payload);
+	if (ret) {
+		pr_err("%s: Failed to set speaker cfg param, err %d\n",
+		       __func__, ret);
+		goto fail_cmd;
+	}
+	ret = 0;
+fail_cmd:
+	pr_debug("%s: config.pdata.param_id 0x%x status %d\n", __func__,
+		 param_info.param_id, ret);
+	return ret;
+}
+
+static int afe_dsm_get_params(int port, int module_id, int param_id, uint8_t *payload, int size)
+{
+	struct param_hdr_v3 param_hdr = {0};
+	int ret = -EINVAL;
+
+	param_hdr.module_id = module_id;
+	if(port & 0x1) {
+        param_hdr.instance_id = 0x8000;
+	} else {
+        param_hdr.instance_id = INSTANCE_ID_0;
+	}
+	param_hdr.param_id = param_id;
+	param_hdr.param_size = size;
+
+    this_afe.dsm_payload = payload - (sizeof(struct param_hdr_v3) + sizeof(uint32_t));
+
+	ret = q6afe_get_params(port, NULL, &param_hdr);
+	if (ret) {
+		pr_err("%s: Failed to get dsm cfg data\n", __func__);
+		goto done;
+	}
+
+	ret = 0;
+done:
+	return ret;
+}
+int afe_dsm_rx_get_params(uint8_t *payload, int size)
+{
+	return afe_dsm_get_params(DSM_RX_PORT_ID, AFE_MODULE_DSM_RX, AFE_PARAM_ID_DSM_CFG, payload, size);
+}
+EXPORT_SYMBOL(afe_dsm_rx_get_params);
+
+int afe_dsm_rx_set_params(uint8_t *payload, int size)
+{
+	return afe_dsm_set_params(DSM_RX_PORT_ID, AFE_MODULE_DSM_RX, AFE_PARAM_ID_DSM_CFG, payload, size);
+}
+EXPORT_SYMBOL(afe_dsm_rx_set_params);
+
+int afe_dsm_set_calib(uint8_t* payload)
+{
+	return afe_dsm_set_params(DSM_TX_PORT_ID, AFE_MODULE_DSM_TX, AFE_PARAM_ID_CALIB, payload, sizeof(uint32_t)*3);
+}
+EXPORT_SYMBOL(afe_dsm_set_calib);
+
+int afe_dsm_ramp_dn_cfg(uint8_t *payload, uint32_t delay_in_ms)
+{
+	int ret;
+ 	uint32_t *params = (uint32_t *)payload;
+
+	*(params)		= 0;
+	*(params + 1)	= 3;                //three command will be sent
+	*(params + 2)	= 0x03000063;       // fade out time
+	*(params + 3)	= 5;                // 5ms
+	*(params + 4)	= 0x03000064;       // mute time
+	*(params + 5)	= 500;              // 5s mute time will make sure silence output till PA software shutdown.
+	*(params + 6)	= 0x03000066;       // start fade
+	*(params + 7)	= 1;
+
+	ret = afe_dsm_rx_set_params(payload, sizeof(uint32_t)*8);
+	if (ret) {
+		pr_err("%s: Failed to set speaker ramp duration param, err %d\n",
+		       __func__, ret);
+		goto fail_cmd;
+	}
+	/* dsp needs atleast 15ms to ramp down pilot tone*/
+	usleep_range(delay_in_ms*1000, delay_in_ms*1000 + 10);
+	ret = 0;
+fail_cmd:
+	pr_debug("%s: status %d\n", __func__, ret);
+	return ret;
+}
+EXPORT_SYMBOL(afe_dsm_ramp_dn_cfg);
+
+int afe_dsm_pre_calib(uint8_t* payload)
+{
+ 	uint32_t *params = (uint32_t *)payload;
+ 	*(params)		= 0;
+	*(params + 1)	= 1;               //count
+	*(params + 2)	= 0x03000001;     // enable flag
+	*(params + 3)	= 4;              // mode 0: disable, 1: enable, 2: bypass and pilot tone, 4: pilot tone only
+
+	afe_dsm_rx_set_params(payload, 4*sizeof(uint32_t));
+	usleep_range(1000*1000, 1000*1000 + 10);              //make the stable iv data
+	return 0;
+}
+EXPORT_SYMBOL(afe_dsm_pre_calib);
+
+int afe_dsm_post_calib(uint8_t* payload)
+{
+ 	uint32_t *params = (uint32_t *)payload;
+ 	*(params)		= 0;
+	*(params + 1)	= 1;               //count
+	*(params + 2)	= 0x03000001;     // enable flag
+	*(params + 3)	= 1;              // mode 0: disable, 1: enable, 2: bypass and pilot tone, 4: pilot tone only
+    return afe_dsm_rx_set_params(payload, 4*sizeof(uint32_t));
+}
+EXPORT_SYMBOL(afe_dsm_post_calib);
+
+int afe_dsm_get_calib(uint8_t* payload)
+{
+	return afe_dsm_get_params(DSM_TX_PORT_ID, AFE_MODULE_DSM_TX, AFE_PARAM_ID_CALIB, payload, sizeof(uint32_t)*14);
+}
+EXPORT_SYMBOL(afe_dsm_get_calib);
+
+int afe_dsm_set_status(uint8_t* payload)
+{
+    return afe_dsm_set_params(DSM_RX_PORT_ID, AFE_MODULE_DSM_RX, AFE_PARAM_ID_DSM_INFO, (int8_t*)payload, sizeof(uint32_t)*8);
+}
+EXPORT_SYMBOL(afe_dsm_set_status);
+#endif
 
 static int afe_spk_prot_prepare(int src_port, int dst_port, int param_id,
 				union afe_spkr_prot_config *prot_config)

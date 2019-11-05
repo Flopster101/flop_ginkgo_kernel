@@ -1,4 +1,5 @@
 /* Copyright (c) 2015-2018, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -33,6 +34,12 @@
 #include "wcd-mbhc-legacy.h"
 #include "wcd-mbhc-adc.h"
 #include "wcd-mbhc-v2-api.h"
+
+/*begin, add support fm inside lan add by wangfajie@longcheer.com at 20190501*/
+#if defined(CONFIG_FM_INSIDE_LAN)
+#include <sound/fm_lan.h>
+#endif
+/*end*/
 
 void wcd_mbhc_jack_report(struct wcd_mbhc *mbhc,
 			  struct snd_soc_jack *jack, int status, int mask)
@@ -563,6 +570,12 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 	pr_debug("%s: enter insertion %d hph_status %x\n",
 		 __func__, insertion, mbhc->hph_status);
 	if (!insertion) {
+		/*begin, there is headset plug out so we need pass the state to kernel in btfm modules
+		  add by wangfajie@longcheer.com at 20190501*/
+#if defined(CONFIG_FM_INSIDE_LAN)
+		headset_status_change(false);
+#endif
+		/*end*/
 		/* Report removal */
 		mbhc->hph_status &= ~jack_type;
 		/*
@@ -608,6 +621,13 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 		mbhc->current_plug = MBHC_PLUG_TYPE_NONE;
 		mbhc->force_linein = false;
 	} else {
+		/*begin, there is headset plug in so we need pass the state to kernel in btfm modules
+			add by wangfajie@longcheer.com at 20190501*/
+#if defined(CONFIG_FM_INSIDE_LAN)
+		headset_status_change(true);
+#endif
+		/*end*/
+
 		/*
 		 * Report removal of current jack type.
 		 * Headphone to headset shouldn't report headphone
@@ -814,6 +834,9 @@ void wcd_mbhc_find_plug_and_report(struct wcd_mbhc *mbhc,
 		 * Nothing was reported previously
 		 * report a headphone or unsupported
 		 */
+		if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADSET)
+			wcd_mbhc_report_plug(mbhc, 0, SND_JACK_HEADSET);
+
 		wcd_mbhc_report_plug(mbhc, 1, SND_JACK_HEADPHONE);
 	} else if (plug_type == MBHC_PLUG_TYPE_GND_MIC_SWAP) {
 		if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADPHONE)
@@ -829,6 +852,9 @@ void wcd_mbhc_find_plug_and_report(struct wcd_mbhc *mbhc,
 		jack_type = SND_JACK_HEADSET;
 		if (anc_mic_found)
 			jack_type = SND_JACK_ANC_HEADPHONE;
+
+		if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADPHONE)
+			wcd_mbhc_report_plug(mbhc, 0, SND_JACK_HEADPHONE);
 
 		/*
 		 * If Headphone was reported previously, this will
@@ -1408,8 +1434,8 @@ static int wcd_mbhc_initialise(struct wcd_mbhc *mbhc)
 		/* Insertion debounce set to 48ms */
 		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_INSREM_DBNC, 4);
 	} else {
-		/* Insertion debounce set to 96ms */
-		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_INSREM_DBNC, 6);
+		/* Insertion debounce set to 256ms */
+		WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_INSREM_DBNC, 9);
 	}
 
 	/* Button Debounce set to 16ms */
