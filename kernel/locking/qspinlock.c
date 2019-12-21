@@ -465,20 +465,23 @@ locked:
 	 * and nobody is pending, clear the tail code and grab the lock.
 	 * Otherwise, we only need to grab the lock.
 	 */
-
-	/* In the PV case we might already have _Q_LOCKED_VAL set */
-	if ((val & _Q_TAIL_MASK) == tail) {
+	for (;;) {
+		/* In the PV case we might already have _Q_LOCKED_VAL set */
+		if ((val & _Q_TAIL_MASK) != tail || (val & _Q_PENDING_MASK)) {
+			set_locked(lock);
+			break;
+		}
 		/*
 		 * The smp_cond_load_acquire() call above has provided the
-		 * necessary acquire semantics required for locking.
+		 * necessary acquire semantics required for locking. At most
+		 * two iterations of this loop may be ran.
 		 */
 		old = atomic_cmpxchg_relaxed(&lock->val, val, _Q_LOCKED_VAL);
 		if (old == val)
-			goto release; /* No contention */
-	}
+			goto release;	/* No contention */
 
-	/* Either somebody is queued behind us or _Q_PENDING_VAL is set */
-	set_locked(lock);
+		val = old;
+	}
 
 	/*
 	 * contended path; wait for next if not observed yet, release.
