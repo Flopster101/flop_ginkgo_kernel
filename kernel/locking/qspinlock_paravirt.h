@@ -70,8 +70,10 @@ struct pv_node {
 #define queued_spin_trylock(l)	pv_queued_spin_steal_lock(l)
 static inline bool pv_queued_spin_steal_lock(struct qspinlock *lock)
 {
+	struct __qspinlock *l = (void *)lock;
+
 	if (!(atomic_read(&lock->val) & _Q_LOCKED_PENDING_MASK) &&
-	    (cmpxchg_acquire(&lock->locked, 0, _Q_LOCKED_VAL) == 0)) {
+	    (cmpxchg_acquire(&l->locked, 0, _Q_LOCKED_VAL) == 0)) {
 		qstat_inc(qstat_pv_lock_stealing, true);
 		return true;
 	}
@@ -86,12 +88,16 @@ static inline bool pv_queued_spin_steal_lock(struct qspinlock *lock)
 #if _Q_PENDING_BITS == 8
 static __always_inline void set_pending(struct qspinlock *lock)
 {
-	WRITE_ONCE(lock->pending, 1);
+	struct __qspinlock *l = (void *)lock;
+
+	WRITE_ONCE(l->pending, 1);
 }
 
 static __always_inline void clear_pending(struct qspinlock *lock)
 {
-	WRITE_ONCE(lock->pending, 0);
+	struct __qspinlock *l = (void *)lock;
+
+	WRITE_ONCE(l->pending, 0);
 }
 
 /*
@@ -101,8 +107,10 @@ static __always_inline void clear_pending(struct qspinlock *lock)
  */
 static __always_inline int trylock_clear_pending(struct qspinlock *lock)
 {
-	return !READ_ONCE(lock->locked) &&
-	       (cmpxchg_acquire(&lock->locked_pending, _Q_PENDING_VAL,
+	struct __qspinlock *l = (void *)lock;
+
+	return !READ_ONCE(l->locked) &&
+	       (cmpxchg_acquire(&l->locked_pending, _Q_PENDING_VAL,
 				_Q_LOCKED_VAL) == _Q_PENDING_VAL);
 }
 #else /* _Q_PENDING_BITS == 8 */
@@ -342,6 +350,7 @@ static void pv_wait_node(struct mcs_spinlock *node, struct mcs_spinlock *prev)
 static void pv_kick_node(struct qspinlock *lock, struct mcs_spinlock *node)
 {
 	struct pv_node *pn = (struct pv_node *)node;
+	struct __qspinlock *l = (void *)lock;
 
 	/*
 	 * If the vCPU is indeed halted, advance its state to match that of
@@ -370,7 +379,7 @@ static void pv_kick_node(struct qspinlock *lock, struct mcs_spinlock *node)
 	 * the hash table later on at unlock time, no atomic instruction is
 	 * needed.
 	 */
-	WRITE_ONCE(lock->locked, _Q_SLOW_VAL);
+	WRITE_ONCE(l->locked, _Q_SLOW_VAL);
 	(void)pv_hash(lock, pn);
 }
 
@@ -385,6 +394,7 @@ static u32
 pv_wait_head_or_lock(struct qspinlock *lock, struct mcs_spinlock *node)
 {
 	struct pv_node *pn = (struct pv_node *)node;
+	struct __qspinlock *l = (void *)lock;
 	struct qspinlock **lp = NULL;
 	int waitcnt = 0;
 	int loop;
@@ -435,13 +445,13 @@ pv_wait_head_or_lock(struct qspinlock *lock, struct mcs_spinlock *node)
 			 *
 			 * Matches the smp_rmb() in __pv_queued_spin_unlock().
 			 */
-			if (xchg(&lock->locked, _Q_SLOW_VAL) == 0) {
+			if (xchg(&l->locked, _Q_SLOW_VAL) == 0) {
 				/*
 				 * The lock was free and now we own the lock.
 				 * Change the lock value back to _Q_LOCKED_VAL
 				 * and unhash the table.
 				 */
-				WRITE_ONCE(lock->locked, _Q_LOCKED_VAL);
+				WRITE_ONCE(l->locked, _Q_LOCKED_VAL);
 				WRITE_ONCE(*lp, NULL);
 				goto gotlock;
 			}
@@ -449,7 +459,7 @@ pv_wait_head_or_lock(struct qspinlock *lock, struct mcs_spinlock *node)
 		WRITE_ONCE(pn->state, vcpu_hashed);
 		qstat_inc(qstat_pv_wait_head, true);
 		qstat_inc(qstat_pv_wait_again, waitcnt);
-		pv_wait(&lock->locked, _Q_SLOW_VAL);
+		pv_wait(&l->locked, _Q_SLOW_VAL);
 
 		/*
 		 * Because of lock stealing, the queue head vCPU may not be
@@ -474,6 +484,7 @@ gotlock:
 __visible void
 __pv_queued_spin_unlock_slowpath(struct qspinlock *lock, u8 locked)
 {
+	struct __qspinlock *l = (void *)lock;
 	struct pv_node *node;
 
 	if (unlikely(locked != _Q_SLOW_VAL)) {
@@ -502,7 +513,7 @@ __pv_queued_spin_unlock_slowpath(struct qspinlock *lock, u8 locked)
 	 * Now that we have a reference to the (likely) blocked pv_node,
 	 * release the lock.
 	 */
-	smp_store_release(&lock->locked, 0);
+	smp_store_release(&l->locked, 0);
 
 	/*
 	 * At this point the memory pointed at by lock can be freed/reused,
@@ -528,6 +539,7 @@ __pv_queued_spin_unlock_slowpath(struct qspinlock *lock, u8 locked)
 #ifndef __pv_queued_spin_unlock
 __visible void __pv_queued_spin_unlock(struct qspinlock *lock)
 {
+	struct __qspinlock *l = (void *)lock;
 	u8 locked;
 
 	/*
@@ -535,7 +547,7 @@ __visible void __pv_queued_spin_unlock(struct qspinlock *lock)
 	 * unhash. Otherwise it would be possible to have multiple @lock
 	 * entries, which would be BAD.
 	 */
-	locked = cmpxchg_release(&lock->locked, _Q_LOCKED_VAL, 0);
+	locked = cmpxchg_release(&l->locked, _Q_LOCKED_VAL, 0);
 	if (likely(locked == _Q_LOCKED_VAL))
 		return;
 
