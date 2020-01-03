@@ -1617,7 +1617,8 @@ err_detach:
 	dma_buf_detach(secheap_buf->buf,
 		secheap_buf->attach);
 err_put:
-	dma_buf_put(secheap_buf->buf);
+	if (rc)
+		dma_buf_put(dmabuf);
 err_out:
 	mutex_unlock(&iommu_cb_set.cb_info[idx].lock);
 	return rc;
@@ -2464,8 +2465,6 @@ static int cam_smmu_map_stage2_buffer_and_add_to_list(int idx, int ion_fd,
 
 	/* add to the list */
 	list_add(&mapping_info->list, &iommu_cb_set.cb_info[idx].smmu_buf_list);
-
-	return 0;
 
 err_unmap_sg:
 	dma_buf_unmap_attachment(attach, table, dma_dir);
