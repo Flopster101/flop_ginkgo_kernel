@@ -618,6 +618,37 @@ config LD_DEAD_CODE_DATA_ELIMINATION
 	  sections (e.g., '.text.init'). Typically '.' in section names
 	  is used to distinguish them from label names / C identifiers.
 
+choice
+	prompt "Kernel linker"
+	default LD_BFD if !LTO_CLANG
+	default LD_GOLD if LTO_CLANG
+	help
+	  This selects the linker that will be used to link the kernel and
+	  its composite objects.
+
+	  Note that using either ld.gold or lld is required for Clang LTO.
+	  ld.bfd will not work.
+
+config LD_BFD
+	bool "bfd"
+	depends on !LTO_CLANG
+	help
+	  Use the standard ld.bfd linker from binutils, which is usually the
+	  default. This linker does not work with Clang LTO.
+
+config LD_GOLD
+	bool "gold"
+	depends on LTO_CLANG
+	help
+	  Use the alternative ld.gold linker from binutils.
+
+config LD_LLD
+	bool "lld"
+	help
+	  Use the alternative lld linker from LLVM.
+
+endchoice
+
 config LTO
 	def_bool n
 
