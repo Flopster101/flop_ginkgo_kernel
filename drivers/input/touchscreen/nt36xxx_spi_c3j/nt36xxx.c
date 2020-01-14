@@ -220,6 +220,7 @@ static int32_t nvt_ts_resume(struct device *dev);
 static int32_t nvt_ts_suspend(struct device *dev);
 
 typedef int(*touchpanel_recovery_cb_p_t)(void);
+extern int set_touchpanel_recovery_callback(touchpanel_recovery_cb_p_t cb);
 
 /* Fix Touch/Fingerprint wakeup crash issue */
 int nvt_ts_recovery_callback(void)
@@ -1983,6 +1984,8 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 #endif
 
 	pm_runtime_enable(&ts->client->dev);
+
+	set_touchpanel_recovery_callback(nvt_ts_recovery_callback);
 
 	driver_ready = true;
 
