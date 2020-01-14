@@ -87,6 +87,7 @@ int32_t fts_ts_enable_regulator(bool en);
 extern bool fts_ts_is_gesture_mode(void);
 
 typedef int(*touchpanel_recovery_cb_p_t)(void);
+extern int set_touchpanel_recovery_callback(touchpanel_recovery_cb_p_t cb);
 
 /* Fix Touch/Fingerprint wakeup crash issue */
 int fts_ts_recovery_callback(void)
@@ -1854,6 +1855,8 @@ static int fts_ts_probe(struct spi_device *spi)
 #endif
 
 	pm_runtime_enable(ts_data->dev);
+
+	set_touchpanel_recovery_callback(fts_ts_recovery_callback);
 
 	FTS_INFO("Touch Screen(SPI BUS) driver prboe successfully");
 	return 0;
