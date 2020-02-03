@@ -19,7 +19,7 @@
 #include <asm-generic/iomap.h>
 #endif
 
-#include <asm/mmiowb.h>
+#include <asm-generic/mmiowb.h>
 #include <asm-generic/pci_iomap.h>
 
 #ifndef mmiowb

@@ -57,7 +57,7 @@
 #include <linux/stringify.h>
 #include <linux/bottom_half.h>
 #include <asm/barrier.h>
-#include <asm/mmiowb.h>
+#include <asm-generic/mmiowb.h>
 
 
 /*
