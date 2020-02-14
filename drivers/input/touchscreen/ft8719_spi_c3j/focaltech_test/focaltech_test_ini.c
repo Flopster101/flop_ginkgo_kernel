@@ -119,7 +119,7 @@ static int fts_strncmp(const char *cs, const char *ct, int count)
 	u8 c1 = 0, c2 = 0;
 
 	while (count) {
-		if  ((cs == '\0') || (ct == '\0'))
+		if  ((cs == NULL) || (ct == NULL))
 			return -1;
 		c1 = TOLOWER(*cs++);
 		c2 = TOLOWER(*ct++);
