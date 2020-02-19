@@ -114,3 +114,4 @@ obj-$(CONFIG_TOUCHSCREEN_ST)	+= st/
 obj-$(CONFIG_TOUCHSCREEN_FTS)	+= focaltech_touch/
 obj-$(CONFIG_TOUCHSCREEN_XIAOMI_C3J)	+= nt36xxx_spi_c3j/
 obj-$(CONFIG_TOUCHSCREEN_XIAOMI_C3J)	+= ft8719_spi_c3j/
+obj-$(CONFIG_TOUCHSCREEN_COMMON)	+= tp_common.o
