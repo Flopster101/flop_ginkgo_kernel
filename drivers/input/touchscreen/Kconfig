@@ -1308,4 +1308,13 @@ source "drivers/input/touchscreen/nt36xxx_spi_c3j/Kconfig"
 
 source "drivers/input/touchscreen/ft8719_spi_c3j/Kconfig"
 
+config TOUCHSCREEN_COMMON
+	bool "Common touchscreen interface to interact with userspace"
+	default y
+	help
+	  Say Y here if you want to control touchpanel features via
+	  /sys/touchpanel.
+
+	  If unsure, say N.
+
 endif
