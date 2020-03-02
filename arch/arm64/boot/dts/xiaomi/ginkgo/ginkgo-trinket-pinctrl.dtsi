@@ -1,3 +1,11 @@
+&pm8008_8 {
+	status = "disabled";
+};
+
+&pm8008_9 {
+	status = "disabled";
+};
+
 &tlmm {
 	/delete-node/ wsa_swr_clk_pin;
 	/delete-node/ wsa_swr_data_pin;
