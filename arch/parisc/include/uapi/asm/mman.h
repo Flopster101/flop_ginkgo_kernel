@@ -52,6 +52,7 @@
 #define MADV_UNMERGEABLE 13		/* KSM may not merge identical pages */
 
 #define MADV_COLD	20		/* deactivate these pages */
+#define MADV_PAGEOUT	21		/* reclaim these pages */
 
 #define MADV_HUGEPAGE	14		/* Worth backing with hugepages */
 #define MADV_NOHUGEPAGE 15		/* Not worth backing with hugepages */
