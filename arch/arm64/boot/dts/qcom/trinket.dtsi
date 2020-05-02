@@ -396,7 +396,7 @@
 					dev = "/dev/block/platform/soc/4804000.ufshc/by-name/vendor";
 					type = "ext4";
 					mnt_flags = "ro,barrier=1,discard";
-					fsmgr_flags = "wait,avb";
+					fsmgr_flags = "wait";
 					status = "ok";
 				};
 			};
