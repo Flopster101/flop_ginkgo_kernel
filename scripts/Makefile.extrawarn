@@ -75,4 +75,8 @@ KBUILD_CFLAGS += $(call cc-disable-warning, uninitialized)
 KBUILD_CFLAGS += $(call cc-disable-warning, pointer-to-enum-cast)
 KBUILD_CFLAGS += $(call cc-disable-warning, unaligned-access)
 endif
+
+# Disable noisy checks by default
+DTC_FLAGS += $(call dtc-option,-Wno-unit_address_vs_reg)
+
 endif
