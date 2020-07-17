@@ -1,0 +1,10 @@
+&rpm_bus {
+    rpm-regulator-ldoa14 {
+        status = "okay";
+
+        regulator-l14 {
+            status = "okay";
+            regulator-always-on;
+        };
+    };
+};
