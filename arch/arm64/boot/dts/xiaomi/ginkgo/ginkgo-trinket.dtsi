@@ -1,0 +1,33 @@
+#include "../qcom-base/trinket-idp.dtsi"
+#include "ginkgo-trinket-audio.dtsi"
+#include "ginkgo-trinket-battery.dtsi"
+#include "ginkgo-trinket-camera.dtsi"
+#include "ginkgo-trinket-display.dtsi"
+#include "ginkgo-trinket-fingerprint.dtsi"
+#include "ginkgo-trinket-ir.dtsi"
+#include "ginkgo-trinket-memory.dtsi"
+#include "ginkgo-trinket-nfc.dtsi"
+#include "ginkgo-trinket-pinctrl.dtsi"
+#include "ginkgo-trinket-pm6125.dtsi"
+#include "ginkgo-trinket-regulator.dtsi"
+#include "ginkgo-trinket-thermal.dtsi"
+#include "ginkgo-trinket-touchscreen.dtsi"
+#include "ginkgo-trinket-usb.dtsi"
+
+&firmware {
+	android {
+		vbmeta {
+			parts = "vbmeta,boot,system,vendor,dtbo,recovery";
+		};
+
+		fstab {
+			vendor {
+				fsmgr_flags = "wait,avb";
+			};
+		};
+	};
+};
+
+&sdhc_2 {
+	cd-gpios = <&tlmm 98 0>;
+};
