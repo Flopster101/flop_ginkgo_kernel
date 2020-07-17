@@ -1,0 +1,40 @@
+&mtp_batterydata {
+	#include "battery/qg-batterydata-atl-4000mah.dtsi"
+	#include "battery/qg-batterydata-light-4000mah.dtsi"
+	#include "battery/qg-batterydata-unknow-4000mah.dtsi"
+};
+
+&pmi632_qg {
+	qcom,qg-iterm-ma = <350>;
+	qcom,vbatt-cutoff-mv = <3500>;
+	qcom,hold-soc-while-full;
+	qcom,linearize-soc;
+	qcom,qg-vadc = <&pmi632_vadc>;
+};
+
+&pmi632_charger {
+	/delete-property/ qcom,step-charging-enable;
+	/delete-property/ qcom,hw-connector-mitigation;
+	/delete-property/ qcom,connector-internal-pull-kohm;
+
+	qcom,fcc-max-ua = <3000000>;
+	qcom,fv-max-uv = <4400000>;
+	qcom,dc-icl-ua = <3000000>;
+	qcom,usb-icl-ua = <3000000>;
+	qcom,chg-term-src = <1>;
+	qcom,chg-term-current-ma = <(-200)>;
+	qcom,sw-jeita-enable;
+	qcom,sec-charger-config = <0>;
+	qcom,auto-recharge-soc = <99>;
+	qcom,thermal-mitigation = <3000000 2500000 2200000 
+			2000000 1500000 1000000 800000 500000 200000>;
+
+};
+
+&smb1355 {
+	status = "disabled";
+};
+
+&smb1355_charger {
+	status = "disabled";
+};

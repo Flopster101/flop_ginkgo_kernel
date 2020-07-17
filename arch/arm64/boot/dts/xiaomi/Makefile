@@ -1,3 +1,11 @@
+ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
+
+dtbo-$(CONFIG_MACH_XIAOMI_C3J) += \
+    ginkgo-trinket-overlay.dtbo
+ginkgo-trinket-overlay.dtbo-base := qcom-base/trinket.dtb
+
+endif
+
 always		:= $(dtb-y)
 subdir-y	:= $(dts-dirs)
 
