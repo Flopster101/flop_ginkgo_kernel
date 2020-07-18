@@ -41,13 +41,6 @@
 #include <linux/platform_data/spi-mt65xx.h>
 #endif
 
-// include longcheer header
-#include "../lct_tp_info.h"
-#include "../lct_tp_selftest.h"
-#include "../lct_tp_gesture.h"
-#include "../lct_tp_grip_area.h"
-#include "../lct_tp_work.h"
-
 #define NVT_DEBUG 1
 
 //---GPIO number---
@@ -113,23 +106,6 @@ extern const uint16_t gesture_key_array[];
 
 //enable 'check touch vendor' feature
 #define CHECK_TOUCH_VENDOR
-
-//enable tp work feature
-#define LCT_TP_WORK_EN      1
-
-//enable tp grip area feature
-#define LCT_TP_GRIP_AREA_EN 1
-
-//enable tp usb plugin feature
-#define NVT_USB_PLUGIN 1
-
-#if NVT_USB_PLUGIN
-typedef struct touchscreen_usb_plugin_data {
-	bool valid;
-	bool usb_plugged_in;
-	void (*event_callback)(void);
-} touchscreen_usb_plugin_data_t;
-#endif
 
 //---Touch Vendor ID---
 #define TP_VENDOR_UNKNOW    0x00
