@@ -1296,8 +1296,6 @@ config TOUCHSCREEN_RAYDIUM_CHIPSET
 
 	  If unsure, say N.
 
-source "drivers/input/touchscreen/focaltech_touch/Kconfig"
-
 config TOUCHSCREEN_XIAOMI_C3J
 	bool "touchscreen for xiaomi c3j project"
 	depends on SPI
