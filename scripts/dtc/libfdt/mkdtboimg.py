@@ -900,7 +900,7 @@ def create_dtbo_image_from_config(fout, argv):
         filepath = dt_arg['filename']
         if not os.path.isabs(filepath):
             for root, dirnames, filenames in os.walk(args.dtbdir):
-                for filename in fnmatch.filter(filenames, filepath):
+                for filename in fnmatch.filter(filenames, os.path.basename(filepath)):
                     filepath = os.path.join(root, filename)
         params['dt_file'] = open(filepath, 'rb')
         params['dt_offset'] = 0
