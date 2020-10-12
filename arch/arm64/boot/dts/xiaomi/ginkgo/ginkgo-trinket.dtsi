@@ -22,7 +22,8 @@
 
 		fstab {
 			vendor {
-				fsmgr_flags = "wait,avb";
+				dev = "/dev/block/platform/soc/4744000.sdhci/by-name/vendor";
+				fsmgr_flags = "wait";
 			};
 		};
 	};
