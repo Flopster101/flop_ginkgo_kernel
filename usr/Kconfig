@@ -162,7 +162,6 @@ config INITRAMFS_COMPRESSION_NONE
 	  short time at boot, while both the cpio image and the unpacked
 	  filesystem image will be present in memory simultaneously
 
->>>>>>> 5b4a0c0c5c9bf... kernel: zstd compress/decompress libs update
 config INITRAMFS_COMPRESSION_GZIP
 	bool "Gzip"
 	depends on RD_GZIP
