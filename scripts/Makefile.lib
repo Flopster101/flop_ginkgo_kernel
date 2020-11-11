@@ -281,7 +281,8 @@ DTC_FLAGS += -Wno-simple_bus_reg \
 	-Wno-pci_device_bus_num \
 	-Wno-pci_device_reg \
 	-Wno-interrupts_property \
-	-Wno-gpios_property
+	-Wno-gpios_property \
+	-Wno-clocks_property
 endif
 
 ifeq ($(KBUILD_ENABLE_EXTRA_GCC_CHECKS),2)
