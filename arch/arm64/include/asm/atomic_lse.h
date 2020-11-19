@@ -570,8 +570,9 @@ static inline int __refcount_##op(int i, atomic_t *r)			\
 	/* LL/SC */							\
 	__LL_SC_CALL(__refcount_##op)					\
 	"	cmp	%w0, wzr\n"					\
-	__nops(1),							\
+	__nops(2),							\
 	/* LSE atomics */						\
+	"	prfm		pstl1strm, %[cval]\n"			\
 	"	ldadd		%w[i], w30, %[cval]\n"			\
 	"	adds		%w[i], %w[i], w30\n"			\
 	REFCOUNT_PRE_CHECK_ ## pre (w30))				\
@@ -595,8 +596,9 @@ static inline int __refcount_##op(int i, atomic_t *r)			\
 	/* LL/SC */							\
 	__LL_SC_CALL(__refcount_##op)					\
 	"	cmp	%w0, wzr\n"					\
-	__nops(1),							\
+	__nops(2),							\
 	/* LSE atomics */						\
+	"	prfm	pstl1strm, %[cval]\n"				\
 	"	neg	%w[i], %w[i]\n"					\
 	"	ldaddl	%w[i], w30, %[cval]\n"				\
 	"	adds	%w[i], %w[i], w30\n")				\
@@ -621,8 +623,9 @@ static inline int __refcount_add_not_zero(int i, atomic_t *r)
 	"	mov	%w0, %w[i]\n"
 	__LL_SC_CALL(__refcount_add_not_zero)
 	"	cmp	%w0, wzr\n"
-	__nops(6),
+	__nops(7),
 	/* LSE atomics */
+	"	prfm	pstl1strm, %[cval]\n"
 	"	ldr	%w0, %[cval]\n"
 	"1:	cmp	%w0, wzr\n"
 	"	b.eq	2f\n"
