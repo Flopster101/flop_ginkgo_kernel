@@ -292,6 +292,16 @@ endif
 
 DTC_FLAGS += $(DTC_FLAGS_$(basetarget))
 
+ifneq ($(DTC_EXT),)
+ifeq ($(KBUILD_ENABLE_EXTRA_GCC_CHECKS),)
+DTC_FLAGS += -Wno-graph_port \
+	-Wno-i2c_bus_bridge \
+	-Wno-graph_child_address \
+	-Wno-spi_bus_bridge \
+	-Wno-alias_paths
+endif
+endif
+
 # Generate an assembly file to wrap the output of the device tree compiler
 quiet_cmd_dt_S_dtb= DTB     $@
 cmd_dt_S_dtb=						\
