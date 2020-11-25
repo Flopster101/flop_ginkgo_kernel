@@ -361,17 +361,6 @@ static int parse_cluster_params(struct device_node *node,
 	if (ret)
 		goto fail;
 
-	key = "qcom,disable-prediction";
-	c->lpm_prediction = !(of_property_read_bool(node, key));
-
-	if (c->lpm_prediction) {
-		key = "qcom,clstr-tmr-add";
-		ret = of_property_read_u32(node, key, &c->tmr_add);
-		if (ret || c->tmr_add < TIMER_ADD_LOW ||
-					c->tmr_add > TIMER_ADD_HIGH)
-			c->tmr_add = DEFAULT_TIMER_ADD;
-	}
-
 	/* Set default_level to 0 as default */
 	c->default_level = 0;
 
@@ -588,32 +577,6 @@ static int parse_cpu_levels(struct device_node *node, struct lpm_cluster *c)
 	ret = of_property_read_u32(node, key, &cpu->psci_mode_mask);
 	if (ret)
 		goto failed;
-
-	cpu->ipi_prediction = !(of_property_read_bool(node,
-					"qcom,disable-ipi-prediction"));
-
-	cpu->lpm_prediction = !(of_property_read_bool(node,
-					"qcom,disable-prediction"));
-
-	if (cpu->lpm_prediction) {
-		key = "qcom,ref-stddev";
-		ret = of_property_read_u32(node, key, &cpu->ref_stddev);
-		if (ret || cpu->ref_stddev < STDDEV_LOW ||
-					cpu->ref_stddev > STDDEV_HIGH)
-			cpu->ref_stddev = DEFAULT_STDDEV;
-
-		key = "qcom,tmr-add";
-		ret = of_property_read_u32(node, key, &cpu->tmr_add);
-		if (ret || cpu->tmr_add < TIMER_ADD_LOW ||
-					cpu->tmr_add > TIMER_ADD_HIGH)
-			cpu->tmr_add = DEFAULT_TIMER_ADD;
-
-		key = "qcom,ref-premature-cnt";
-		ret = of_property_read_u32(node, key, &cpu->ref_premature_cnt);
-		if (ret || cpu->ref_premature_cnt < PREMATURE_CNT_LOW ||
-				cpu->ref_premature_cnt > PREMATURE_CNT_HIGH)
-			cpu->ref_premature_cnt = DEFAULT_PREMATURE_CNT;
-	}
 
 	key = "parse_cpu";
 	ret = parse_cpu(node, cpu);
