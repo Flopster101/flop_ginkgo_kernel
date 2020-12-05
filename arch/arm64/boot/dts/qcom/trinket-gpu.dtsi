@@ -260,6 +260,7 @@
 		clock-names = "mem_clk", "mem_iface_clk",
 				"alt_mem_iface_clk", "smmu_vote";
 
+		qcom,unmap_fast;
 		qcom,retention;
 		qcom,hyp_secure_alloc;
 
