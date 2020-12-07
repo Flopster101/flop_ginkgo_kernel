@@ -123,6 +123,18 @@ config LOCALVERSION_BRANCH_SHA
 	  A cleaner version of LOCALVERSION_AUTO, contains branch name
 	  and current tree.
 
+config POLLY_CLANG
+	bool "Use Clang Polly optimizations"
+	depends on !COMPILE_TEST
+	help
+	  This option enables Clang's polyhedral loop optimizer known as
+	  Polly. Polly is able to optimize various loops throughout the
+	  kernel for cache locality. This requires a Clang toolchain
+	  compiled with support for Polly. More information can be found
+	  from Polly's website:
+
+	  https://polly.llvm.org
+
 config HAVE_KERNEL_GZIP
 	bool
 
