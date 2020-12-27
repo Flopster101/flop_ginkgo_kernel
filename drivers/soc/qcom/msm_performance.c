@@ -26,6 +26,7 @@
 #include <linux/input.h>
 #include <linux/kthread.h>
 #include <linux/sched/core_ctl.h>
+#include <linux/battery_saver.h>
 
 /*
  * Sched will provide the data for every 20ms window,
@@ -79,7 +80,9 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 
 		i_cpu_stats = &per_cpu(cpu_stats, cpu);
 
-		i_cpu_stats->min = val;
+		if (!(val > i_cpu_stats->min && is_battery_saver_on()))
+			i_cpu_stats->min = val;
+
 		cpumask_set_cpu(cpu, limit_mask);
 
 		cp = strnchr(cp, strlen(cp), ' ');
