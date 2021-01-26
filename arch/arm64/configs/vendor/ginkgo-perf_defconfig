@@ -740,3 +740,6 @@ CONFIG_NTFS_FS=y
 
 # Jump Label
 CONFIG_JUMP_LABEL=y
+
+# Kernel-space Battery Saver
+CONFIG_BATTERY_SAVER=y
