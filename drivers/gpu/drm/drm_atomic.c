@@ -30,6 +30,7 @@
 #include <drm/drm_atomic.h>
 #include <drm/drm_mode.h>
 #include <drm/drm_print.h>
+#include <linux/cpu_input_boost.h>
 #include <linux/devfreq_boost.h>
 #include <linux/pm_qos.h>
 #include <linux/sync_file.h>
@@ -2249,8 +2250,11 @@ static int __drm_mode_atomic_ioctl(struct drm_device *dev, void *data,
 			(arg->flags & DRM_MODE_PAGE_FLIP_EVENT))
 		return -EINVAL;
 
-	if (!(arg->flags & DRM_MODE_ATOMIC_TEST_ONLY))
-		devfreq_boost_kick(DEVFREQ_CPU_LLCC_DDR_BW);
+	if (!(arg->flags & DRM_MODE_ATOMIC_TEST_ONLY)) {
+		devfreq_boost_kick(DEVFREQ_MSM_CPUBW);
+		cpu_input_boost_kick();
+
+	}
 
 	drm_modeset_acquire_init(&ctx, 0);
 
