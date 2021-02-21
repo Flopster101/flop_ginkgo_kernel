@@ -263,7 +263,5 @@ int kgsl_active_count_wait(struct kgsl_device *device, int count);
 void kgsl_pwrctrl_busy_time(struct kgsl_device *device, u64 time, u64 busy);
 void kgsl_pwrctrl_set_constraint(struct kgsl_device *device,
 			struct kgsl_pwr_constraint *pwrc, uint32_t id);
-void kgsl_pwrctrl_update_l2pc(struct kgsl_device *device,
-			unsigned long timeout_us);
 void kgsl_pwrctrl_set_default_gpu_pwrlevel(struct kgsl_device *device);
 #endif /* __KGSL_PWRCTRL_H */
