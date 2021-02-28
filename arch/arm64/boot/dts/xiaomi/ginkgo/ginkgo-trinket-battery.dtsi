@@ -26,9 +26,9 @@
 	qcom,sw-jeita-enable;
 	qcom,sec-charger-config = <0>;
 	qcom,auto-recharge-soc = <99>;
-	qcom,thermal-mitigation = <3000000 2500000 2200000 
-			2000000 1500000 1000000 800000 500000 200000>;
-
+	qcom,flash-disable-soc = <0>;
+	qcom,thermal-mitigation = <3000000 2500000 2000000
+			2000000 1500000 900000 800000 500000 100000>;
 };
 
 &smb1355 {
