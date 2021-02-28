@@ -41,10 +41,10 @@
 					<&pm6125_vadc ADC_GPIO4_PU2>;
 
 	backlight_therm {
-				reg = <ADC_GPIO4_PU2>;
-				qcom,ratiometric;
-				qcom,hw-settle-time = <200>;
-			};
+		reg = <ADC_GPIO4_PU2>;
+		qcom,ratiometric;
+		qcom,hw-settle-time = <200>;
+	};
 };
 
 &pmi632_vadc {
@@ -58,5 +58,14 @@
 
 	bat_therm_400k {
 		qcom,lut-index = <0>;
+	};
+};
+
+&thermal_zones {
+	soc {
+		cooling-maps {
+			/delete-node/ soc_cpu6;
+			/delete-node/ soc_cpu7;
+		};
 	};
 };

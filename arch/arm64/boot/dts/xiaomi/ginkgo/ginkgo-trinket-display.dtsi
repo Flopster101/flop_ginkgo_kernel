@@ -4,21 +4,28 @@
 
 &qupv3_se1_i2c {
 	led-controller@36 {
-       	compatible = "ktd,ktd3136";
-       	reg = <0x36>;
-       	#address-cells = <1>;
-       	#size-cells = <0>;
+		compatible = "ktd,ktd3136";
+		reg = <0x36>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		i2c-pull-up;
 	};
 };
 
 &dsi_panel_pwr_supply {
 	qcom,panel-supply-entry@0 {
-		qcom,supply-pre-off-sleep = <20>;
+		qcom,supply-post-on-sleep = <1>;
+		qcom,supply-pre-off-sleep = <15>;
 	};
 
 	qcom,panel-supply-entry@1 {
-		qcom,supply-post-on-sleep = <10>;
+		qcom,supply-pre-off-sleep = <10>;
+		qcom,supply-post-on-sleep = <3>;
+	};
+
+	qcom,panel-supply-entry@2 {
+		/delete-property/ qcom,supply-post-on-sleep;
+		qcom,supply-pre-off-sleep = <4>;
 	};
 };
 
@@ -91,6 +98,7 @@
 	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
 	qcom,mdss-dsi-panel-status-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
+	qcom,mdss-dsi-panel-max-error-count = <3>;
 	qcom,mdss-dsi-display-timings {
 		timing@0{
 			qcom,mdss-dsi-panel-phy-timings =
@@ -125,6 +133,7 @@
 	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
 	qcom,mdss-dsi-panel-status-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
+	qcom,mdss-dsi-panel-max-error-count = <3>;
 	qcom,mdss-dsi-display-timings {
 		timing@0{
 			qcom,mdss-dsi-panel-phy-timings =
@@ -159,6 +168,7 @@
 	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
 	qcom,mdss-dsi-panel-status-value = <0x9c>;
 	qcom,mdss-dsi-panel-status-read-length = <1>;
+	qcom,mdss-dsi-panel-max-error-count = <3>;
 	qcom,mdss-dsi-display-timings {
 		timing@0{
 			qcom,mdss-dsi-panel-phy-timings =
