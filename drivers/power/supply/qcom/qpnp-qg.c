@@ -1,4 +1,5 @@
 /* Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -42,7 +43,9 @@
 #include "qg-battery-profile.h"
 #include "qg-defs.h"
 
-static int qg_debug_mask;
+u8 set_cycle_flag = 0;
+
+static int qg_debug_mask = 0xfff;
 module_param_named(
 	debug_mask, qg_debug_mask, int, 0600
 );
@@ -210,6 +213,7 @@ static void qg_notify_charger(struct qpnp_qg *chip)
 		return;
 
 	prop.intval = chip->bp.float_volt_uv;
+
 	rc = power_supply_set_property(chip->batt_psy,
 			POWER_SUPPLY_PROP_VOLTAGE_MAX, &prop);
 	if (rc < 0) {
@@ -2047,6 +2051,9 @@ static int qg_psy_set_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_FG_RESET:
 		qg_reset(chip);
 		break;
+	case POWER_SUPPLY_PROP_CYCLE_COUNT:
+		rc = set_cycle_count(chip->counter, pval->intval);
+		break;
 	case POWER_SUPPLY_PROP_BATT_AGE_LEVEL:
 		rc = qg_setprop_batt_age_level(chip, pval->intval);
 		break;
@@ -2081,8 +2088,6 @@ static int qg_psy_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
 		rc = qg_get_battery_current(chip, &pval->intval);
-		if (!rc)
-			pval->intval *= (-1);
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_OCV:
 		rc = qg_sdam_read(SDAM_OCV_UV, &pval->intval);
@@ -2307,9 +2312,8 @@ static int qg_charge_full_update(struct qpnp_qg *chip)
 				chip->msoc, health, chip->charge_full,
 				chip->charge_done);
 	if (chip->charge_done && !chip->charge_full) {
-		if (chip->msoc >= 99 &&
-			(health == POWER_SUPPLY_HEALTH_GOOD ||
-			 health ==  POWER_SUPPLY_HEALTH_COOL)) {
+		if (chip->msoc >= 99 && (health == POWER_SUPPLY_HEALTH_GOOD || 
+			health == POWER_SUPPLY_HEALTH_WARM || health == POWER_SUPPLY_HEALTH_COOL) ) {
 			chip->charge_full = true;
 			qg_dbg(chip, QG_DEBUG_STATUS, "Setting charge_full (0->1) @ msoc=%d\n",
 					chip->msoc);
@@ -3062,19 +3066,18 @@ static int qg_setup_battery(struct qpnp_qg *chip)
 		rc = get_batt_id_ohm(chip, &chip->batt_id_ohm);
 		if (rc < 0) {
 			pr_err("Failed to detect batt_id rc=%d\n", rc);
-			pr_err("Using default id 68K to match profile \n");
-			chip->batt_id_ohm = 68000;
-		}
-
-		rc = qg_load_battery_profile(chip);
-		if (rc < 0) {
-			pr_err("Failed to load battery-profile rc=%d\n", rc);
 			chip->profile_loaded = false;
-			chip->soc_reporting_ready = true;
 		} else {
-			chip->profile_loaded = true;
+			rc = qg_load_battery_profile(chip);
+			if (rc < 0) {
+				pr_err("Failed to load battery-profile rc=%d\n",
+								rc);
+				chip->profile_loaded = false;
+				chip->soc_reporting_ready = true;
+			} else {
+				chip->profile_loaded = true;
+			}
 		}
-
 	}
 
 	qg_dbg(chip, QG_DEBUG_PROFILE, "battery_missing=%d batt_id_ohm=%d Ohm profile_loaded=%d profile=%s\n",
@@ -4554,6 +4557,12 @@ static int qpnp_qg_probe(struct platform_device *pdev)
 	rc = qg_register_device(chip);
 	if (rc < 0) {
 		pr_err("Failed to register QG char device, rc=%d\n", rc);
+		return rc;
+	}
+
+	rc = qg_sanitize_sdam(chip);
+	if (rc < 0) {
+		pr_err("Failed to sanitize SDAM, rc=%d\n", rc);
 		return rc;
 	}
 
