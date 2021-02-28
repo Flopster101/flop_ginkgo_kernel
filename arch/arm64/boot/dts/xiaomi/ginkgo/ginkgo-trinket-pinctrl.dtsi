@@ -166,7 +166,7 @@
 		};
 	};
 
-cam_sensor_rear3_active: cam_sensor_rear3_active {
+	cam_sensor_rear3_active: cam_sensor_rear3_active {
 		/* RESET3 */
 		mux {
 			pins = "gpio45";
