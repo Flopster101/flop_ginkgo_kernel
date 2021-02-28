@@ -329,7 +329,7 @@ void msm_vfe48_stats_cfg_ub(struct vfe_device *vfe_dev)
 		64, /* MSM_ISP_STATS_CS */
 		64, /* MSM_ISP_STATS_IHIST */
 		64, /* MSM_ISP_STATS_BHIST */
-		64, /* MSM_ISP_STATS_AEC_BG */
+		80, /* MSM_ISP_STATS_AEC_BG */
 	};
 
 	stats_burst_len = VFE48_STATS_BURST_LEN;
