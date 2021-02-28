@@ -5,6 +5,7 @@
 #include "ginkgo-trinket-display.dtsi"
 #include "ginkgo-trinket-fingerprint.dtsi"
 #include "ginkgo-trinket-ir.dtsi"
+#include "ginkgo-trinket-led.dtsi"
 #include "ginkgo-trinket-memory.dtsi"
 #include "ginkgo-trinket-nfc.dtsi"
 #include "ginkgo-trinket-pinctrl.dtsi"
@@ -13,6 +14,7 @@
 #include "ginkgo-trinket-thermal.dtsi"
 #include "ginkgo-trinket-touchscreen.dtsi"
 #include "ginkgo-trinket-usb.dtsi"
+#include "ginkgo-trinket-vibrator.dtsi"
 
 &firmware {
 	android {
