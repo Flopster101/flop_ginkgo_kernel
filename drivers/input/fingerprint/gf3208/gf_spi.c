@@ -1,7 +1,7 @@
 /*
  * TEE driver for goodix fingerprint sensor
  * Copyright (C) 2016 Goodix
- * Copyright (C) 2019 XiaoMi, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -528,6 +528,11 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		pr_info("operation: 0x%x\n", info.operation);
 		break;
 
+        case GF_IOC_HAL_INITED_READY:
+		pr_debug("%s GF_IOC_HAL_INITED_READY\n", __func__);
+		gf_dev->device_available = 1;
+		break;
+
 	default:
 		pr_warn("unsupport cmd:0x%x\n", cmd);
 		break;
@@ -581,7 +586,6 @@ static int gf_open(struct inode *inode, struct file *filp)
 					goto err_irq;
 			}
 			gf_disable_irq(gf_dev);
-			gf_dev->device_available = 1;
 		}
 	} else {
 		pr_info("No device for minor %d\n", iminor(inode));
