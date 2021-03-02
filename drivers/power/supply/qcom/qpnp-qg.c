@@ -45,7 +45,7 @@
 
 u8 set_cycle_flag = 0;
 
-static int qg_debug_mask = 0xfff;
+static int qg_debug_mask;
 module_param_named(
 	debug_mask, qg_debug_mask, int, 0600
 );
