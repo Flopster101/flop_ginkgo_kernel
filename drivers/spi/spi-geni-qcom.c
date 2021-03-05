@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -29,7 +30,7 @@
 #include <soc/qcom/boot_stats.h>
 
 #define SPI_NUM_CHIPSELECT	(4)
-#define SPI_XFER_TIMEOUT_MS	(250)
+#define SPI_XFER_TIMEOUT_MS	(1000)
 #define SPI_AUTO_SUSPEND_DELAY	(250)
 /* SPI SE specific registers */
 #define SE_SPI_CPHA		(0x224)
@@ -2042,7 +2043,7 @@ static void ssr_spi_force_resume(struct device *dev)
 static const struct dev_pm_ops spi_geni_pm_ops = {
 	SET_RUNTIME_PM_OPS(spi_geni_runtime_suspend,
 					spi_geni_runtime_resume, NULL)
-	SET_SYSTEM_SLEEP_PM_OPS(spi_geni_suspend, spi_geni_resume)
+	SET_LATE_SYSTEM_SLEEP_PM_OPS(spi_geni_suspend, spi_geni_resume)
 };
 
 static const struct of_device_id spi_geni_dt_match[] = {
