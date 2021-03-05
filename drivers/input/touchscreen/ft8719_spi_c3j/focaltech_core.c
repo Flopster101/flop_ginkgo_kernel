@@ -1937,6 +1937,7 @@ static struct spi_driver fts_ts_driver = {
 		.pm = &fts_dev_pm_ops,
 #endif
 		.of_match_table = of_match_ptr(fts_dt_match),
+		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 	.id_table = fts_ts_id,
 };
