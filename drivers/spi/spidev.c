@@ -2,6 +2,7 @@
  * Simple synchronous userspace interface to SPI devices
  *
  * Copyright (C) 2006 SWAPP
+ * Copyright (C) 2021 XiaoMi, Inc.
  *	Andrea Paterniani <a.paterniani@swapp-eng.it>
  * Copyright (C) 2007 David Brownell (simplification, cleanup)
  *
@@ -123,9 +124,9 @@ spidev_sync_write(struct spidev_data *spidev, size_t len)
 	struct spi_transfer	t = {
 			.tx_buf		= spidev->tx_buffer,
 			.len		= len,
-			.delay_usecs = 0,
-			.cs_change   = 0,
-			.speed_hz   = 960000,
+			.delay_usecs	= 0,
+			.cs_change	= 0,
+			.speed_hz	= 960000,
 		};
 	struct spi_message	m;
 
@@ -631,7 +632,6 @@ static int spidev_open(struct inode *inode, struct file *filp)
 		goto err_find_dev;
 	}
 
-
 	spidev->users++;
 	filp->private_data = spidev;
 	nonseekable_open(inode, filp);
@@ -661,15 +661,6 @@ static int spidev_release(struct inode *inode, struct file *filp)
 	/* last close? */
 	spidev->users--;
 	if (!spidev->users) {
-
-		spin_lock_irq(&spidev->spi_lock);
-		if (spidev->spi)
-			spidev->speed_hz = spidev->spi->max_speed_hz;
-
-		/* ... after we unbound from the underlying device? */
-		dofree = (spidev->spi == NULL);
-		spin_unlock_irq(&spidev->spi_lock);
-
 		if (dofree)
 			kfree(spidev);
 		else
