@@ -703,7 +703,6 @@ static void fts_irq_read_report(void)
 	fts_prc_queue_work(ts_data);
 #endif
 
-	pm_qos_update_request(&ts_data->pm_touch_req, 100);
 	pm_qos_update_request(&ts_data->pm_spi_req, 100);
 
 	ret = fts_read_parse_touchdata(ts_data);
@@ -718,7 +717,6 @@ static void fts_irq_read_report(void)
 	}
 
  	pm_qos_update_request(&ts_data->pm_spi_req, PM_QOS_DEFAULT_VALUE);
-	pm_qos_update_request(&ts_data->pm_touch_req, PM_QOS_DEFAULT_VALUE);
 
 #if FTS_ESDCHECK_EN
 	fts_esdcheck_set_intr(0);
@@ -1600,12 +1598,8 @@ static int fts_ts_probe_entry(struct spi_device *client, struct fts_ts_data *ts_
 
 	ts_data->pm_spi_req.type = PM_QOS_REQ_AFFINE_IRQ;
 	ts_data->pm_spi_req.irq = geni_spi_get_master_irq(client);
+	irq_set_perf_affinity(ts_data->pm_spi_req.irq, IRQF_PERF_AFFINE);
 	pm_qos_add_request(&ts_data->pm_spi_req, PM_QOS_CPU_DMA_LATENCY,
-		PM_QOS_DEFAULT_VALUE);
-
-	ts_data->pm_touch_req.type = PM_QOS_REQ_AFFINE_IRQ;
-	ts_data->pm_touch_req.irq = client->irq;
-	pm_qos_add_request(&ts_data->pm_touch_req, PM_QOS_CPU_DMA_LATENCY,
 		PM_QOS_DEFAULT_VALUE);
 
 	ret = fts_irq_registration(ts_data);
@@ -1639,7 +1633,6 @@ static int fts_ts_probe_entry(struct spi_device *client, struct fts_ts_data *ts_
 	return 0;
 
 err_irq_req:
-	pm_qos_remove_request(&ts_data->pm_touch_req);
 	pm_qos_remove_request(&ts_data->pm_spi_req);
 	fts_ts_enable_regulator(false);
 err_enable_regulator:
@@ -1706,7 +1699,6 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
 	free_irq(ts_data->irq, ts_data);
 	input_unregister_device(ts_data->input_dev);
 
-	pm_qos_remove_request(&ts_data->pm_touch_req);
 	pm_qos_remove_request(&ts_data->pm_spi_req);
 
 	if (ts_data->ts_workqueue)
