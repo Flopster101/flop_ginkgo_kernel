@@ -30,6 +30,7 @@
 #include <linux/relay.h>
 #include <linux/slab.h>
 #include <linux/percpu-rwsem.h>
+#include <linux/cpuset.h>
 #include <uapi/linux/sched/types.h>
 #include <linux/highmem.h>
 #include <linux/cpuset.h>
