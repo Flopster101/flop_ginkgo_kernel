@@ -48,8 +48,6 @@
 		qcom,mdss-pan-physical-width-dimension = <67>;
 		qcom,mdss-pan-physical-height-dimension = <145>;
 
-		qcom,ulps-enabled;
-		qcom,suspend-ulps-enabled;
 		qcom,panel-allow-phy-poweroff;
 
 		qcom,mdss-dsi-display-timings {
