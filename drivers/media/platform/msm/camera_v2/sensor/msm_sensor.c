@@ -25,8 +25,6 @@
 static struct msm_camera_i2c_fn_t msm_sensor_cci_func_tbl;
 static struct msm_camera_i2c_fn_t msm_sensor_secure_func_tbl;
 
-extern char *saved_command_line;
-
 static void msm_sensor_adjust_mclk(struct msm_camera_power_ctrl_t *ctrl)
 {
 	int idx;
@@ -252,11 +250,6 @@ static int msm_sensor_get_sensor_id_gc02m1(struct msm_sensor_ctrl_t *s_ctrl)
 	sensor_i2c_client->i2c_func_tbl->i2c_read(
 		sensor_i2c_client,0x19,
 		&vendorid, MSM_CAMERA_I2C_BYTE_DATA);
-
-	if (strstr(saved_command_line, "androidboot.hwversion=2")) {
-		pr_info("%s: setting vendorid 0x27 for new board ver 2", __func__);
-		vendorid = 0x27;
-	}
 
 	CDBG("%s: read from 0x19 vendorid %d\n", __func__,vendorid);
 	if((!strcmp("ginkgo_gc02m1_sunny_ii", s_ctrl->sensordata->sensor_name))||(!strcmp("ginkgo_gc02m1_ofilm_ii", s_ctrl->sensordata->sensor_name))){
