@@ -3,7 +3,7 @@
  * MSM 7k High speed uart driver
  *
  * Copyright (c) 2008 Google Inc.
- * Copyright (c) 2007-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2007-2018, 2021 The Linux Foundation. All rights reserved.
  * Modified: Nick Pelly <npelly@google.com>
  *
  * All source code in this file is licensed under the following license
@@ -1869,7 +1869,7 @@ static void msm_hs_sps_tx_callback(struct sps_event_notify *notify)
 		&addr, notify->data.transfer.iovec.size,
 		notify->data.transfer.iovec.flags);
 
-	del_timer(&msm_uport->tx.tx_timeout_timer);
+	del_timer_sync(&msm_uport->tx.tx_timeout_timer);
 	MSM_HS_DBG("%s(): Queue kthread work\n", __func__);
 	kthread_queue_work(&msm_uport->tx.kworker, &msm_uport->tx.kwork);
 }
