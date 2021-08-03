@@ -2890,13 +2890,7 @@ static int hdd_softap_unpack_ie(mac_handle_t mac_handle,
 	return QDF_STATUS_SUCCESS;
 }
 
-/**
- * hdd_is_any_sta_connecting() - check if any sta is connecting
- * @hdd_ctx: hdd context
- *
- * Return: true if any sta is connecting
- */
-static bool hdd_is_any_sta_connecting(struct hdd_context *hdd_ctx)
+bool hdd_is_any_sta_connecting(struct hdd_context *hdd_ctx)
 {
 	struct hdd_adapter *adapter = NULL, *next_adapter = NULL;
 	struct hdd_station_ctx *sta_ctx;
@@ -4447,12 +4441,21 @@ static void wlan_hdd_set_sap_hwmode(struct hdd_adapter *adapter)
 	u8 checkRatesfor11g = true;
 	u8 require_ht = false, require_vht = false;
 	const u8 *ie;
+	ssize_t size;
 
 	config->SapHw_mode = eCSR_DOT11_MODE_11b;
 
+	size = beacon->head_len - sizeof(mgmt_frame->u.beacon) -
+	      (sizeof(*mgmt_frame) - sizeof(mgmt_frame->u));
+
+	if (size <= 0) {
+		hdd_err_rl("Invalid length: %zu", size);
+		return;
+	}
+
 	ie = wlan_get_ie_ptr_from_eid(WLAN_EID_SUPP_RATES,
 				      &mgmt_frame->u.beacon.variable[0],
-				      beacon->head_len);
+				      size);
 	if (ie) {
 		ie += 1;
 		wlan_hdd_check_11gmode(ie, &require_ht, &require_vht,
@@ -6353,6 +6356,8 @@ static int __wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
 	struct cfg80211_chan_def new_chandef;
 	struct cfg80211_chan_def *chandef;
 	uint16_t sap_ch;
+	bool srd_channel_allowed;
+	enum QDF_OPMODE vdev_opmode;
 
 	hdd_enter();
 
@@ -6457,9 +6462,15 @@ static int __wlan_hdd_cfg80211_start_ap(struct wiphy *wiphy,
 		hdd_err("SAP not allowed on DFS channel if no dfs master capability!!");
 		return -EINVAL;
 	}
-	if (!wlan_reg_is_etsi13_srd_chan_allowed_master_mode(hdd_ctx->pdev) &&
+
+	vdev_opmode = wlan_vdev_mlme_get_opmode(adapter->vdev);
+	ucfg_mlme_get_srd_master_mode_for_vdev(hdd_ctx->psoc, vdev_opmode,
+					       &srd_channel_allowed);
+
+	if (!srd_channel_allowed &&
 	    wlan_reg_is_etsi13_srd_chan(hdd_ctx->pdev, channel)) {
-		hdd_err("SAP not allowed on SRD channel.");
+		hdd_err("vdev opmode %d not allowed on SRD channel.",
+			vdev_opmode);
 		return -EINVAL;
 	}
 	if (cds_is_sub_20_mhz_enabled()) {

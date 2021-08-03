@@ -1294,7 +1294,8 @@ WMI_OBJS := $(WMI_OBJ_DIR)/wmi_unified.o \
 	    $(WMI_OBJ_DIR)/wmi_unified_api.o \
 	    $(WMI_OBJ_DIR)/wmi_unified_reg_api.o \
 	    $(WMI_OBJ_DIR)/wmi_unified_vdev_api.o \
-	    $(WMI_OBJ_DIR)/wmi_unified_vdev_tlv.o
+	    $(WMI_OBJ_DIR)/wmi_unified_vdev_tlv.o \
+	    $(WMI_OBJ_DIR)/wmi_unified_crypto_api.o
 
 ifeq ($(CONFIG_POWER_MANAGEMENT_OFFLOAD), y)
 WMI_OBJS += $(WMI_OBJ_DIR)/wmi_unified_pmo_api.o
@@ -2902,6 +2903,8 @@ cppflags-y += -DENABLE_HAL_SOC_STATS
 cppflags-y += -DENABLE_HAL_REG_WR_HISTORY
 cppflags-y += -DDP_RX_DESC_COOKIE_INVALIDATE
 cppflags-y += -DPCI_LINK_STATUS_SANITY
+cppflags-y += -DDISABLE_EAPOL_INTRABSS_FWD
+cppflags-y += -DSYSTEM_PM_CHECK
 endif
 
 cppflags-$(CONFIG_WLAN_CLD_PM_QOS) += -DCLD_PM_QOS
