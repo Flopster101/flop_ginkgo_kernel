@@ -867,6 +867,12 @@ struct dp_soc_stats {
 			uint32_t nbuf_sanity_fail;
 			/* Duplicate link desc refilled */
 			uint32_t dup_refill_link_desc;
+			/* EAPOL drop count in intrabss scenario */
+			uint32_t intrabss_eapol_drop;
+			/* Non Eapol pkt drop cnt due to peer not authorized */
+			uint32_t peer_unauth_rx_pkt_drop;
+			/* MSDU len err count */
+			uint32_t msdu_len_err;
 		} err;
 
 		/* packet count per core - per ring */
@@ -1410,6 +1416,10 @@ struct dp_soc {
 #endif /* WLAN_SUPPORT_RX_FLOW_TAG || WLAN_SUPPORT_RX_FISA */
 	/* Save recent operation related variable */
 	struct dp_last_op_info last_op_info;
+#ifdef FEATURE_RUNTIME_PM
+	/* Dp runtime refcount */
+	qdf_atomic_t dp_runtime_refcount;
+#endif
 };
 
 #ifdef IPA_OFFLOAD
