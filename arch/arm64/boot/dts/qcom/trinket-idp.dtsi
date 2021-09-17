@@ -139,6 +139,7 @@
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
 	qcom,qg-use-s7-ocv;
+	qcom,cl-disable = <1>;
 };
 
 &pmi632_charger {
