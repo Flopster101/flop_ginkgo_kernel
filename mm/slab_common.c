@@ -1229,9 +1229,9 @@ void cache_random_seq_destroy(struct kmem_cache *cachep)
 #ifdef CONFIG_SLABINFO
 
 #ifdef CONFIG_SLAB
-#define SLABINFO_RIGHTS (S_IWUSR | S_IRUSR)
+#define SLABINFO_RIGHTS (0600)
 #else
-#define SLABINFO_RIGHTS S_IRUSR
+#define SLABINFO_RIGHTS (0400)
 #endif
 
 static void print_slabinfo_header(struct seq_file *m)
