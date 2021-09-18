@@ -648,8 +648,8 @@ static int __init pageowner_init(void)
 		return 0;
 	}
 
-	dentry = debugfs_create_file("page_owner", S_IRUSR, NULL,
-			NULL, &proc_page_owner_operations);
+	dentry = debugfs_create_file("page_owner", 0400, NULL,
+				     NULL, &proc_page_owner_operations);
 	if (IS_ERR(dentry))
 		return PTR_ERR(dentry);
 

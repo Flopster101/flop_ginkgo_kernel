@@ -3299,7 +3299,8 @@ static int shmem_symlink(struct inode *dir, struct dentry *dentry, const char *s
 	if (len > PAGE_SIZE)
 		return -ENAMETOOLONG;
 
-	inode = shmem_get_inode(dir->i_sb, dir, S_IFLNK|S_IRWXUGO, 0, VM_NORESERVE);
+	inode = shmem_get_inode(dir->i_sb, dir, S_IFLNK | 0777, 0,
+				VM_NORESERVE);
 	if (!inode)
 		return -ENOSPC;
 
@@ -3723,7 +3724,7 @@ static int shmem_show_options(struct seq_file *seq, struct dentry *root)
 			sbinfo->max_blocks << (PAGE_SHIFT - 10));
 	if (sbinfo->max_inodes != shmem_default_max_inodes())
 		seq_printf(seq, ",nr_inodes=%lu", sbinfo->max_inodes);
-	if (sbinfo->mode != (S_IRWXUGO | S_ISVTX))
+	if (sbinfo->mode != (0777 | S_ISVTX))
 		seq_printf(seq, ",mode=%03ho", sbinfo->mode);
 	if (!uid_eq(sbinfo->uid, GLOBAL_ROOT_UID))
 		seq_printf(seq, ",uid=%u",
@@ -3858,7 +3859,7 @@ int shmem_fill_super(struct super_block *sb, void *data, int silent)
 	if (!sbinfo)
 		return -ENOMEM;
 
-	sbinfo->mode = S_IRWXUGO | S_ISVTX;
+	sbinfo->mode = 0777 | S_ISVTX;
 	sbinfo->uid = current_fsuid();
 	sbinfo->gid = current_fsgid();
 	sb->s_fs_info = sbinfo;
@@ -4304,7 +4305,7 @@ static struct file *__shmem_file_setup(const char *name, loff_t size,
 	d_set_d_op(path.dentry, &anon_ops);
 
 	res = ERR_PTR(-ENOSPC);
-	inode = shmem_get_inode(sb, NULL, S_IFREG | S_IRWXUGO, 0, flags);
+	inode = shmem_get_inode(sb, NULL, S_IFREG | 0777, 0, flags);
 	if (!inode)
 		goto put_memory;
 
