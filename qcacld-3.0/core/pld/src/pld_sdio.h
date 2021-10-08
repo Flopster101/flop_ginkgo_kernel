@@ -27,13 +27,11 @@
 #ifdef DYNAMIC_SINGLE_CHIP
 #define PREFIX DYNAMIC_SINGLE_CHIP "/"
 #else
-
 #ifdef MULTI_IF_NAME
 #define PREFIX MULTI_IF_NAME "/"
 #else
 #define PREFIX ""
 #endif
-
 #endif
 
 #define PLD_QCA9377_REV1_1_VERSION          0x5020001
@@ -49,11 +47,14 @@
 #define PLD_AR6320_REV3_VERSION             0x5020000
 #define PLD_AR6320_REV3_2_VERSION           0x5030000
 #define PLD_AR6320_DEV_VERSION              0x1000000
-
-
 #endif
 
-#ifndef CONFIG_SDIO
+#ifdef CONFIG_SDIO
+int pld_sdio_register_driver(void);
+void pld_sdio_unregister_driver(void);
+int pld_sdio_get_fw_files_for_target(struct pld_fw_files *pfw_files,
+				     u32 target_type, u32 target_version);
+#else
 static inline int pld_sdio_register_driver(void)
 {
 	return 0;
@@ -69,18 +70,9 @@ int pld_sdio_get_fw_files_for_target(struct pld_fw_files *pfw_files,
 {
 	return 0;
 }
-static inline uint8_t *pld_sdio_get_wlan_mac_address(struct device *dev,
-						     uint32_t *num)
-{
-	*num = 0;
-	return NULL;
-}
-#else
-int pld_sdio_register_driver(void);
-void pld_sdio_unregister_driver(void);
-int pld_sdio_get_fw_files_for_target(struct pld_fw_files *pfw_files,
-				     u32 target_type, u32 target_version);
-#ifdef CONFIG_CNSS
+#endif
+
+#if defined(CONFIG_SDIO) && defined(CONFIG_CNSS)
 static inline uint8_t *pld_sdio_get_wlan_mac_address(struct device *dev,
 						     uint32_t *num)
 {
@@ -93,7 +85,6 @@ static inline uint8_t *pld_sdio_get_wlan_mac_address(struct device *dev,
 	*num = 0;
 	return NULL;
 }
-#endif
 #endif
 
 #ifdef CONFIG_PLD_SDIO_CNSS
@@ -124,6 +115,29 @@ static inline void pld_sdio_device_self_recovery(struct device *dev)
 static inline bool pld_sdio_platform_driver_support(void)
 {
 	return true;
+}
+
+/**
+ * pld_hif_sdio_get_virt_ramdump_mem() - Get virtual ramdump memory
+ * @dev: device
+ * @size: buffer to virtual memory size
+ *
+ * Return: virtual ramdump memory address
+ */
+static inline void *pld_hif_sdio_get_virt_ramdump_mem(struct device *dev,
+						unsigned long *size)
+{
+	return cnss_common_get_virt_ramdump_mem(dev, size);
+}
+
+/**
+ * pld_hif_sdio_release_ramdump_mem() - Release virtual ramdump memory
+ * @address: virtual ramdump memory address
+ *
+ * Return: void
+ */
+static inline void pld_hif_sdio_release_ramdump_mem(unsigned long *address)
+{
 }
 #else
 static inline void *pld_sdio_get_virt_ramdump_mem(struct device *dev,
@@ -166,9 +180,7 @@ static inline bool pld_sdio_platform_driver_support(void)
 {
 	return false;
 }
-#endif
 
-#ifdef CONFIG_PLD_SDIO_CNSS
 /**
  * pld_hif_sdio_get_virt_ramdump_mem() - Get virtual ramdump memory
  * @dev: device
@@ -179,7 +191,18 @@ static inline bool pld_sdio_platform_driver_support(void)
 static inline void *pld_hif_sdio_get_virt_ramdump_mem(struct device *dev,
 						unsigned long *size)
 {
-	return cnss_common_get_virt_ramdump_mem(dev, size);
+	size_t length = 0;
+	int flags = GFP_KERNEL;
+
+	length = TOTAL_DUMP_SIZE;
+
+	if (size)
+		*size = (unsigned long)length;
+
+	if (in_interrupt() || irqs_disabled() || in_atomic())
+		flags = GFP_ATOMIC;
+
+	return kzalloc(length, flags);
 }
 
 /**
@@ -190,8 +213,11 @@ static inline void *pld_hif_sdio_get_virt_ramdump_mem(struct device *dev,
  */
 static inline void pld_hif_sdio_release_ramdump_mem(unsigned long *address)
 {
+	if (address)
+		kfree(address);
 }
-#else
+#endif
+
 #ifdef CONFIG_PLD_SDIO_CNSS2
 #include <net/cnss2.h>
 
@@ -257,40 +283,4 @@ static inline int pld_sdio_wlan_enable(struct device *dev,
 }
 #endif /* CONFIG_PLD_SDIO_CNSS2 */
 
-/**
- * pld_hif_sdio_get_virt_ramdump_mem() - Get virtual ramdump memory
- * @dev: device
- * @size: buffer to virtual memory size
- *
- * Return: virtual ramdump memory address
- */
-static inline void *pld_hif_sdio_get_virt_ramdump_mem(struct device *dev,
-						unsigned long *size)
-{
-	size_t length = 0;
-	int flags = GFP_KERNEL;
-
-	length = TOTAL_DUMP_SIZE;
-
-	if (size)
-		*size = (unsigned long)length;
-
-	if (in_interrupt() || irqs_disabled() || in_atomic())
-		flags = GFP_ATOMIC;
-
-	return kzalloc(length, flags);
-}
-
-/**
- * pld_hif_sdio_release_ramdump_mem() - Release virtual ramdump memory
- * @address: virtual ramdump memory address
- *
- * Return: void
- */
-static inline void pld_hif_sdio_release_ramdump_mem(unsigned long *address)
-{
-	if (address)
-		kfree(address);
-}
-#endif
 #endif
