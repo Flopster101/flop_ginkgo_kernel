@@ -153,6 +153,7 @@
 #include <qdf_hang_event_notifier.h>
 #include "hif.h"
 #include "wlan_hdd_ioctl.h"
+#include "wlan_hdd_gpio.h"
 
 #define g_mode_rates_size (12)
 #define a_mode_rates_size (8)
@@ -421,6 +422,21 @@ static void hdd_init_6ghz(struct hdd_context *hdd_ctx)
 	struct wiphy *wiphy = hdd_ctx->wiphy;
 	struct ieee80211_channel *chlist = hdd_channels_6_ghz;
 	uint32_t num = ARRAY_SIZE(hdd_channels_6_ghz);
+	QDF_STATUS status;
+	uint32_t band_capability;
+
+	hdd_enter();
+
+	status = ucfg_mlme_get_band_capability(hdd_ctx->psoc, &band_capability);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_err("Failed to get MLME Band Capability");
+		return;
+	}
+
+	if (!(band_capability & (BIT(REG_BAND_6G)))) {
+		hdd_debug("6ghz band not enabled");
+		return;
+	}
 
 	qdf_mem_zero(chlist, sizeof(*chlist) * num);
 	for (i = 0; i < num; i++)
@@ -429,6 +445,8 @@ static void hdd_init_6ghz(struct hdd_context *hdd_ctx)
 	wiphy->bands[HDD_NL80211_BAND_6GHZ] = &wlan_hdd_band_6_ghz;
 	wiphy->bands[HDD_NL80211_BAND_6GHZ]->channels = chlist;
 	wiphy->bands[HDD_NL80211_BAND_6GHZ]->n_channels = num;
+
+	hdd_exit();
 }
 #else
 static void hdd_init_6ghz(struct hdd_context *hdd_ctx)
@@ -15668,6 +15686,7 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] = {
 	FEATURE_MPTA_HELPER_COMMANDS
 	FEATURE_HW_CAPABILITY_COMMANDS
 	FEATURE_THERMAL_VENDOR_COMMANDS
+	FEATURE_GPIO_CFG_VENDOR_COMMANDS
 };
 
 struct hdd_context *hdd_cfg80211_wiphy_alloc(void)
@@ -21114,6 +21133,8 @@ static int __wlan_hdd_cfg80211_connect(struct wiphy *wiphy,
 #endif
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(ndev);
 	struct hdd_context *hdd_ctx;
+	uint8_t vdev_id_list[MAX_NUMBER_OF_CONC_CONNECTIONS], i;
+	bool disable_nan = true;
 
 	hdd_enter();
 
@@ -21165,16 +21186,23 @@ static int __wlan_hdd_cfg80211_connect(struct wiphy *wiphy,
 	 * connection already exists and if this is a case of STA+STA
 	 * or SAP+STA concurrency
 	 */
-	sta_cnt = policy_mgr_mode_specific_connection_count(hdd_ctx->psoc,
-							    PM_STA_MODE, NULL);
-	sap_cnt = policy_mgr_mode_specific_connection_count(hdd_ctx->psoc,
-							    PM_SAP_MODE, NULL);
+	sta_cnt = policy_mgr_get_mode_specific_conn_info(hdd_ctx->psoc, NULL,
+							 vdev_id_list,
+							 PM_STA_MODE);
+	sap_cnt = policy_mgr_get_mode_specific_conn_info(hdd_ctx->psoc, NULL,
+							 &vdev_id_list[sta_cnt],
+							 PM_SAP_MODE);
 
 	if (adapter->device_mode == QDF_P2P_CLIENT_MODE || sap_cnt || sta_cnt) {
-		hdd_debug("Invalid NAN concurrency. SAP: %d STA: %d P2P: %d",
-			  sap_cnt, sta_cnt,
-			  (adapter->device_mode == QDF_P2P_CLIENT_MODE));
-		ucfg_nan_disable_concurrency(hdd_ctx->psoc);
+		for (i = 0; i < sta_cnt + sap_cnt; i++)
+			if (vdev_id_list[i] == adapter->vdev_id)
+				disable_nan = false;
+		if (disable_nan) {
+			hdd_debug("Invalid NAN concurrency. SAP: %d STA: %d P2P: %d",
+				  sap_cnt, sta_cnt,
+				  (adapter->device_mode == QDF_P2P_CLIENT_MODE));
+			ucfg_nan_disable_concurrency(hdd_ctx->psoc);
+		}
 	}
 	/*
 	 * STA+NDI concurrency gets preference over NDI+NDI. Disable
