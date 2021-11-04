@@ -3398,6 +3398,8 @@ CFLAGS_wlan_hdd_main.o += -DBUILD_TAG=\"$(BUILD_TAG)\"
 endif
 
 ccflags-$(CONFIG_ARCH_MDM9607) += $(call cc-option,-Wframe-larger-than=1536)
+ccflags-$(CONFIG_ARCH_MDM9650) += $(call cc-option,-Wframe-larger-than=1536)
+ccflags-$(CONFIG_ARCH_SDXPOORWILLS) += $(call cc-option,-Wframe-larger-than=1536)
 
 # Module information used by KBuild framework
 obj-$(CONFIG_QCA_CLD_WLAN) += $(MODNAME).o
