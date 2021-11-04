@@ -20,7 +20,7 @@
 
 
 #ifndef _MAILBOX_H_
-#define _MAILBOX_H__
+#define _MAILBOX_H_
 
 #include "a_debug.h"
 #include "hif_sdio_dev.h"
