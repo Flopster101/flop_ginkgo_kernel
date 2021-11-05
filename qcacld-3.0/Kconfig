@@ -10,6 +10,7 @@ config QCA_CLD_WLAN
 config QCA_CLD_WLAN_PROFILE
 	string "Configuration profile for Qualcomm Atheros CLD WLAN module"
 	depends on QCA_CLD_WLAN
+	default "qca6174" if ARCH_MDM9607 || ARCH_MDM9650 || ARCH_SDXPOORWILLS
 	default "qca6390" if ARCH_KONA
 	default "default"
 	help
