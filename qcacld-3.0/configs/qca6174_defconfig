@@ -706,8 +706,7 @@ CONFIG_DP_TRACE := n
 ifeq ($(CONFIG_CNSS), y)
 ifeq ($(CONFIG_CNSS_SDIO), y)
 CONFIG_PLD_SDIO_CNSS_FLAG := y
-endif
-ifeq ($(CONFIG_HIF_PCI), y)
+else ifeq ($(CONFIG_HIF_PCI), y)
 CONFIG_PLD_PCIE_CNSS_FLAG := y
 endif
 endif
