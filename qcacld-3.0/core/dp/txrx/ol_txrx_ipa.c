@@ -68,6 +68,7 @@
 #endif
 #include "epping_main.h"
 #include <a_types.h>
+#include <pld_common.h>
 
 #ifdef IPA_OFFLOAD
 #include <ol_txrx_ipa.h>
