@@ -3235,7 +3235,7 @@ void hdd_wlan_list_fw_profile(uint16_t *length,
  *
  * Return: none
  */
-static void hdd_display_stats_help(void)
+static __maybe_unused void hdd_display_stats_help(void)
 {
 	hdd_nofl_info("iwpriv wlan0 dumpStats [option] - dump statistics");
 	hdd_nofl_info("iwpriv wlan0 clearStats [option] - clear statistics");
