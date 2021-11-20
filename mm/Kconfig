@@ -571,7 +571,7 @@ config MEM_SOFT_DIRTY
 config ZSWAP
 	bool "Compressed cache for swap pages (EXPERIMENTAL)"
 	depends on FRONTSWAP && CRYPTO=y
-	select CRYPTO_LZ4
+	depends on CRYPTO_LZ4 || CRYPTO_ZSTD || CRYPTO_LZO
 	select ZPOOL
 	select BTREE
 	default n
@@ -588,6 +588,31 @@ config ZSWAP
 	  interactions don't cause any known issues on simple memory setups,
 	  they have not be fully explored on the large set of potential
 	  configurations and workloads that exist.
+
+choice
+        prompt "Default zswap compressor"
+        default ZSWAP_DEF_COMP_LZ4
+        depends on ZSWAP
+
+config ZSWAP_DEF_COMP_LZ4
+        bool "lz4"
+        depends on CRYPTO_LZ4
+
+config ZSWAP_DEF_COMP_ZSTD
+        bool "zstd"
+        depends on CRYPTO_ZSTD
+
+config ZSWAP_DEF_COMP_LZO
+        bool "lzo"
+        depends on CRYPTO_LZO
+
+endchoice
+
+config ZSWAP_DEF_COMP
+       string
+        default "lzo" if ZSWAP_DEF_COMP_LZO
+        default "zstd" if ZSWAP_DEF_COMP_ZSTD
+        default "lz4" if ZSWAP_DEF_COMP_LZ4
 
 config ZPOOL
 	tristate "Common API for compressed memory storage"
