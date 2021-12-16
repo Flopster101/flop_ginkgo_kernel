@@ -40,25 +40,26 @@ struct srcu_data {
 	unsigned long srcu_unlock_count[2];	/* Unlocks per CPU. */
 
 	/* Update-side state. */
-	raw_spinlock_t __private lock ____cacheline_internodealigned_in_smp;
+	spinlock_t __private lock ____cacheline_internodealigned_in_smp;
 	struct rcu_segcblist srcu_cblist;	/* List of callbacks.*/
 	unsigned long srcu_gp_seq_needed;	/* Furthest future GP needed. */
 	unsigned long srcu_gp_seq_needed_exp;	/* Furthest future exp GP. */
 	bool srcu_cblist_invoking;		/* Invoking these CBs? */
-	struct delayed_work work;		/* Context for CB invoking. */
+	struct timer_list delay_work;		/* Delay for CB invoking */
+	struct work_struct work;		/* Context for CB invoking. */
 	struct rcu_head srcu_barrier_head;	/* For srcu_barrier() use. */
 	struct srcu_node *mynode;		/* Leaf srcu_node. */
 	unsigned long grpmask;			/* Mask for leaf srcu_node */
 						/*  ->srcu_data_have_cbs[]. */
 	int cpu;
-	struct srcu_struct *sp;
+	struct srcu_struct *ssp;
 };
 
 /*
  * Node in SRCU combining tree, similar in function to rcu_data.
  */
 struct srcu_node {
-	raw_spinlock_t __private lock;
+	spinlock_t __private lock;
 	unsigned long srcu_have_cbs[4];		/* GP seq for children */
 						/*  having CBs, but only */
 						/*  is > ->srcu_gq_seq. */
@@ -78,7 +79,7 @@ struct srcu_struct {
 	struct srcu_node *level[RCU_NUM_LVLS + 1];
 						/* First node at each level. */
 	struct mutex srcu_cb_mutex;		/* Serialize CB preparation. */
-	raw_spinlock_t __private lock;		/* Protect counters */
+	spinlock_t __private lock;		/* Protect counters */
 	struct mutex srcu_gp_mutex;		/* Serialize GP work. */
 	unsigned int srcu_idx;			/* Current rdr array element. */
 	unsigned long srcu_gp_seq;		/* Grace-period seq #. */
@@ -104,13 +105,14 @@ struct srcu_struct {
 #define SRCU_STATE_SCAN1	1
 #define SRCU_STATE_SCAN2	2
 
-#define __SRCU_STRUCT_INIT(name)					\
-	{								\
-		.sda = &name##_srcu_data,				\
-		.lock = __RAW_SPIN_LOCK_UNLOCKED(name.lock),		\
-		.srcu_gp_seq_needed = 0 - 1,				\
-		__SRCU_DEP_MAP_INIT(name)				\
-	}
+#define __SRCU_STRUCT_INIT(name, pcpu_name)				\
+{									\
+	.sda = &pcpu_name,						\
+	.lock = __SPIN_LOCK_UNLOCKED(name.lock),			\
+	.srcu_gp_seq_needed = -1UL,					\
+	.work = __DELAYED_WORK_INITIALIZER(name.work, NULL, 0),		\
+	__SRCU_DEP_MAP_INIT(name)					\
+}
 
 /*
  * Define and initialize a srcu struct at build time.
@@ -131,14 +133,22 @@ struct srcu_struct {
  *
  * See include/linux/percpu-defs.h for the rules on per-CPU variables.
  */
-#define __DEFINE_SRCU(name, is_static)					\
-	static DEFINE_PER_CPU(struct srcu_data, name##_srcu_data);\
-	is_static struct srcu_struct name = __SRCU_STRUCT_INIT(name)
+#ifdef MODULE
+# define __DEFINE_SRCU(name, is_static)					\
+	is_static struct srcu_struct name;				\
+	struct srcu_struct *__srcu_struct_##name			\
+		__section("___srcu_struct_ptrs") = &name
+#else
+# define __DEFINE_SRCU(name, is_static)					\
+	static DEFINE_PER_CPU(struct srcu_data, name##_srcu_data);	\
+	is_static struct srcu_struct name =				\
+		__SRCU_STRUCT_INIT(name, name##_srcu_data)
+#endif
 #define DEFINE_SRCU(name)		__DEFINE_SRCU(name, /* not static */)
 #define DEFINE_STATIC_SRCU(name)	__DEFINE_SRCU(name, static)
 
-void synchronize_srcu_expedited(struct srcu_struct *sp);
-void srcu_barrier(struct srcu_struct *sp);
-void srcu_torture_stats_print(struct srcu_struct *sp, char *tt, char *tf);
+void synchronize_srcu_expedited(struct srcu_struct *ssp);
+void srcu_barrier(struct srcu_struct *ssp);
+void srcu_torture_stats_print(struct srcu_struct *ssp, char *tt, char *tf);
 
 #endif

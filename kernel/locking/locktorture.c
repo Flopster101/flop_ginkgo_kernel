@@ -21,6 +21,9 @@
  *          Davidlohr Bueso <dave@stgolabs.net>
  *	Based on kernel/rcu/torture.c.
  */
+
+#define pr_fmt(fmt) fmt
+
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/kthread.h>
@@ -57,7 +60,7 @@ torture_param(int, shutdown_secs, 0, "Shutdown time (j), <= zero to disable.");
 torture_param(int, stat_interval, 60,
 	     "Number of seconds between stats printk()s");
 torture_param(int, stutter, 5, "Number of jiffies to run/halt test, 0=disable");
-torture_param(bool, verbose, true,
+torture_param(int, verbose, 1,
 	     "Enable verbose debugging printk()s");
 
 static char *torture_type = "spin_lock";
@@ -76,10 +79,6 @@ struct lock_stress_stats {
 	long n_lock_fail;
 	long n_lock_acquired;
 };
-
-int torture_runnable = IS_ENABLED(MODULE);
-module_param(torture_runnable, int, 0444);
-MODULE_PARM_DESC(torture_runnable, "Start locktorture at module init");
 
 /* Forward reference. */
 static void lock_torture_cleanup(void);
@@ -130,10 +129,8 @@ static void torture_lock_busted_write_delay(struct torture_random_state *trsp)
 	if (!(torture_random(trsp) %
 	      (cxt.nrealwriters_stress * 2000 * longdelay_ms)))
 		mdelay(longdelay_ms);
-#ifdef CONFIG_PREEMPT
 	if (!(torture_random(trsp) % (cxt.nrealwriters_stress * 20000)))
-		preempt_schedule();  /* Allow test to be preempted. */
-#endif
+		torture_preempt_schedule();  /* Allow test to be preempted. */
 }
 
 static void torture_lock_busted_write_unlock(void)
@@ -179,10 +176,8 @@ static void torture_spin_lock_write_delay(struct torture_random_state *trsp)
 	if (!(torture_random(trsp) %
 	      (cxt.nrealwriters_stress * 2 * shortdelay_us)))
 		udelay(shortdelay_us);
-#ifdef CONFIG_PREEMPT
 	if (!(torture_random(trsp) % (cxt.nrealwriters_stress * 20000)))
-		preempt_schedule();  /* Allow test to be preempted. */
-#endif
+		torture_preempt_schedule();  /* Allow test to be preempted. */
 }
 
 static void torture_spin_lock_write_unlock(void) __releases(torture_spinlock)
@@ -352,10 +347,8 @@ static void torture_mutex_delay(struct torture_random_state *trsp)
 		mdelay(longdelay_ms * 5);
 	else
 		mdelay(longdelay_ms / 5);
-#ifdef CONFIG_PREEMPT
 	if (!(torture_random(trsp) % (cxt.nrealwriters_stress * 20000)))
-		preempt_schedule();  /* Allow test to be preempted. */
-#endif
+		torture_preempt_schedule();  /* Allow test to be preempted. */
 }
 
 static void torture_mutex_unlock(void) __releases(torture_mutex)
@@ -507,10 +500,8 @@ static void torture_rtmutex_delay(struct torture_random_state *trsp)
 	if (!(torture_random(trsp) %
 	      (cxt.nrealwriters_stress * 2 * shortdelay_us)))
 		udelay(shortdelay_us);
-#ifdef CONFIG_PREEMPT
 	if (!(torture_random(trsp) % (cxt.nrealwriters_stress * 20000)))
-		preempt_schedule();  /* Allow test to be preempted. */
-#endif
+		torture_preempt_schedule();  /* Allow test to be preempted. */
 }
 
 static void torture_rtmutex_unlock(void) __releases(torture_rtmutex)
@@ -547,10 +538,8 @@ static void torture_rwsem_write_delay(struct torture_random_state *trsp)
 		mdelay(longdelay_ms * 10);
 	else
 		mdelay(longdelay_ms / 10);
-#ifdef CONFIG_PREEMPT
 	if (!(torture_random(trsp) % (cxt.nrealwriters_stress * 20000)))
-		preempt_schedule();  /* Allow test to be preempted. */
-#endif
+		torture_preempt_schedule();  /* Allow test to be preempted. */
 }
 
 static void torture_rwsem_up_write(void) __releases(torture_rwsem)
@@ -574,10 +563,8 @@ static void torture_rwsem_read_delay(struct torture_random_state *trsp)
 		mdelay(longdelay_ms * 2);
 	else
 		mdelay(longdelay_ms / 2);
-#ifdef CONFIG_PREEMPT
 	if (!(torture_random(trsp) % (cxt.nrealreaders_stress * 20000)))
-		preempt_schedule();  /* Allow test to be preempted. */
-#endif
+		torture_preempt_schedule();  /* Allow test to be preempted. */
 }
 
 static void torture_rwsem_up_read(void) __releases(torture_rwsem)
@@ -878,7 +865,7 @@ static int __init lock_torture_init(void)
 		&percpu_rwsem_lock_ops,
 	};
 
-	if (!torture_init_begin(torture_type, verbose, &torture_runnable))
+	if (!torture_init_begin(torture_type, verbose))
 		return -EBUSY;
 
 	/* Process args and tell the world that the torturer is on the job. */
@@ -979,7 +966,7 @@ static int __init lock_torture_init(void)
 	/* Prepare torture context. */
 	if (onoff_interval > 0) {
 		firsterr = torture_onoff_init(onoff_holdoff * HZ,
-					      onoff_interval * HZ);
+					      onoff_interval * HZ, NULL);
 		if (firsterr)
 			goto unwind;
 	}
@@ -995,7 +982,7 @@ static int __init lock_torture_init(void)
 			goto unwind;
 	}
 	if (stutter > 0) {
-		firsterr = torture_stutter_init(stutter);
+		firsterr = torture_stutter_init(stutter, stutter);
 		if (firsterr)
 			goto unwind;
 	}
