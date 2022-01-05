@@ -24,6 +24,10 @@
 	};
 };
 
+&icnss {
+	qcom,hyp_disabled = <1>;
+};
+
 &ipa_hw {
 	status="disabled";
 };
