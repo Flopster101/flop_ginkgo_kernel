@@ -22,6 +22,8 @@
 #define MAX_CHAR 128
 #define DELAY 500
 
+static char** argv;
+
 static struct delayed_work userland_work;
 
 static void free_memory(char** argv, int size)
@@ -68,48 +70,44 @@ static int call_userland(char** argv)
 	return call_usermodehelper(argv[0], argv, envp, UMH_WAIT_PROC);
 }
 
+static inline int nix_sh(const char* cmd)
+{
+  int ret;
+
+  strcpy(argv[0], "/system/bin/sh");
+  strcpy(argv[1], "-c");
+  strcpy(argv[2], cmd);
+  argv[3] = NULL;
+  
+  ret = call_userland(argv);
+  if (!ret)
+    pr_info("%s executed successfully!", cmd);
+  else
+    pr_err("%s failed to execute! %d", cmd, ret);
+  
+  return ret;
+}
+
 static void vbswap_helper(void)
 {
-	char** argv;
-	int ret;
 
-	argv = alloc_memory(INITIAL_SIZE);
-	if (!argv)
-		return;
+  nix_sh("/system/bin/echo 4294967296 > /sys/devices/virtual/block/vbswap0/disksize");
+  nix_sh("/system/bin/mkswap /dev/block/vbswap0");
+  nix_sh("/system/bin/swapon /dev/block/vbswap0");
 
-	strcpy(argv[0], "/system/bin/sh");
-	strcpy(argv[1], "-c");
-	strcpy(argv[2], "/system/bin/printf 4294967296 > /sys/devices/virtual/block/vbswap0/disksize");
-	argv[3] = NULL;
+  free_memory(argv, INITIAL_SIZE);
 
-	ret = call_userland(argv);
-	if (!ret)
-		pr_info("Setting vbswap disksize to 4294967296");
-
-	strcpy(argv[0], "/system/bin/sh");
-	strcpy(argv[1], "-c");
-	strcpy(argv[2], "/system/bin/mkswap /dev/block/vbswap0");
-	argv[3] = NULL;
-	
-	ret = call_userland(argv);
-	if (!ret)
-		pr_info("Calling mkswap dev/block/vbswap0");
-		
-	strcpy(argv[0], "/system/bin/sh");
-	strcpy(argv[1], "-c");
-	strcpy(argv[2], "/system/bin/swapon /dev/block/vbswap0");
-	argv[3] = NULL;
-	
-	ret = call_userland(argv);
-	if (!ret)
-		pr_info("Calling swapon dev/block/vbswap0");
-
-	free_memory(argv, INITIAL_SIZE);
 }
 
 static void vbswap_init(struct work_struct *work)
 {
 	bool is_enforcing;
+
+	argv = alloc_memory(INITIAL_SIZE);
+	if (!argv) {
+		pr_err("Couldn't allocate memory!");
+		return;
+	}
 
 	is_enforcing = get_enforce_value();
 	if (is_enforcing) {
