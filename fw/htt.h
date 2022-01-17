@@ -219,9 +219,16 @@
  *      HTT_T2H_MSG_TYPE_VDEVS_TXRX_STATS_PERIODIC_IND defs.
  * 3.95 Add HTT_H2T_MSG_TYPE_TX_MONITOR_CFG def.
  * 3.96 Modify HTT_H2T_MSG_TYPE_TX_MONITOR_CFG def.
+ * 3.97 Add tx MSDU drop byte count fields in vdev_txrx_stats_hw_stats TLV.
+ * 3.98 Add htt_tx_tcl_metadata_v2 def.
+ * 3.99 Add HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ, _UNMAP_REQ, _MAP_REPORT_REQ and
+ *      HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF defs.
+ * 3.100 Add htt_tx_wbm_completion_v3 def.
+ * 3.101 Add HTT_UL_OFDMA_USER_INFO_V1_BITMAP defs.
+ * 3.102 Add HTT_H2T_MSG_TYPE_MSI_SETUP def.
  */
 #define HTT_CURRENT_VERSION_MAJOR 3
-#define HTT_CURRENT_VERSION_MINOR 96
+#define HTT_CURRENT_VERSION_MINOR 102
 
 #define HTT_NUM_TX_FRAG_DESC  1024
 
@@ -324,6 +331,8 @@ enum HTT_OPTION_TLV_TAGS {
     HTT_OPTION_TLV_TAG_HL_SUPPRESS_TX_COMPL_IND = 0x2,
     HTT_OPTION_TLV_TAG_MAX_TX_QUEUE_GROUPS      = 0x3,
     HTT_OPTION_TLV_TAG_SUPPORT_TX_MSDU_DESC_EXT = 0x4,
+    /* TCL_METADATA_VER: added to support V2 and higher of the TCL Data Cmd */
+    HTT_OPTION_TLV_TAG_TCL_METADATA_VER         = 0x5,
 };
 
 PREPACK struct htt_option_tlv_header_t {
@@ -505,6 +514,47 @@ PREPACK struct htt_option_tlv_support_tx_msdu_desc_ext_t {
     A_UINT16 tx_msdu_desc_ext_support; /* SUPPORT_TX_MSDU_DESC_EXT enum */
 } POSTPACK;
 
+/*
+ * For the tcl data command V2 and higher support added a new
+ * version tag HTT_OPTION_TLV_TAG_TCL_METADATA_VER.
+ * This will be used as a TLV in HTT_H2T_MSG_TYPE_VERSION_REQ and
+ * HTT_T2H_MSG_TYPE_VERSION_CONF.
+ * HTT option TLV for specifying which version of the TCL metadata struct
+ * should be used:
+ *     V1 -> use htt_tx_tcl_metadata struct
+ *     V2 -> use htt_tx_tcl_metadata_v2 struct
+ * Old FW will only support V1.
+ * New FW will support V2. New FW will still support V1, at least during
+ * a transition period.
+ * Similarly, old host will only support V1, and new host will support V1 + V2.
+ *
+ * The host can provide a HTT_OPTION_TLV_TAG_TCL_METADATA_VER in the
+ * HTT_H2T_MSG_TYPE_VERSION_REQ to indicate to the target which version(s)
+ * of TCL metadata the host supports.  If the host doesn't provide a
+ * HTT_OPTION_TLV_TAG_TCL_METADATA_VER in the VERSION_REQ message, it
+ * is implicitly understood that the host only supports V1.
+ * The target can provide a HTT_OPTION_TLV_TAG_TCL_METADATA_VER in the
+ * HTT_T2H_MSG_TYPE_VERSION_CONF to indicate which version of TCL metadata
+ * the host shall use.  The target shall only select one of the versions
+ * supported by the host.  If the target doesn't provide a
+ * HTT_OPTION_TLV_TAG_TCL_METADATA_VER in the VERSION_CONF message, it
+ * is implicitly understood that the V1 TCL metadata shall be used.
+ */
+enum HTT_OPTION_TLV_TCL_METADATA_VER_VALUES {
+    HTT_OPTION_TLV_TCL_METADATA_V1 = 1,
+    HTT_OPTION_TLV_TCL_METADATA_V2 = 2,
+};
+
+PREPACK struct htt_option_tlv_tcl_metadata_ver_t {
+    struct htt_option_tlv_header_t hdr;
+    A_UINT16 tcl_metadata_ver; /* TCL_METADATA_VER_VALUES enum */
+} POSTPACK;
+
+#define HTT_OPTION_TLV_TCL_METADATA_VER_SET(word, value) \
+    HTT_OPTION_TLV_VALUE0_SET(word, value)
+#define HTT_OPTION_TLV_TCL_METADATA_VER_GET(word) \
+    HTT_OPTION_TLV_VALUE0_GET(word)
+
 typedef struct {
     union {
         /* BIT [11 :  0]   :- tag
@@ -668,6 +718,10 @@ typedef enum {
     HTT_STATS_TX_SELFGEN_BE_ERR_STATS_TAG          = 137, /* htt_tx_selfgen_be_err_stats_tlv */
     HTT_STATS_TX_SELFGEN_BE_STATS_TAG              = 138, /* htt_tx_selfgen_be_stats_tlv */
     HTT_STATS_TX_SELFGEN_BE_SCHED_STATUS_STATS_TAG = 139, /* htt_tx_selfgen_be_sched_status_stats_tlv */
+    HTT_STATS_TX_PDEV_BE_UL_MU_MIMO_STATS_TAG      = 140, /* htt_tx_pdev_be_ul_mu_mimo_sch_stats_tlv */
+    HTT_STATS_RX_PDEV_BE_UL_MIMO_USER_STATS_TAG    = 141, /* htt_rx_pdev_be_ul_mimo_user_stats_tlv */
+    HTT_STATS_RX_RING_STATS_TAG                    = 142, /* htt_rx_fw_ring_stats_tlv_v */
+    HTT_STATS_RX_PDEV_BE_UL_TRIG_STATS_TAG         = 143, /* htt_rx_pdev_be_ul_trigger_stats_tlv */
 
 
     HTT_STATS_MAX_TAG,
@@ -729,6 +783,10 @@ enum htt_h2t_msg_type {
     HTT_H2T_MSG_TYPE_RXDMA_RXOLE_PPE_CFG   = 0x19,
     HTT_H2T_MSG_TYPE_VDEVS_TXRX_STATS_CFG  = 0x1a,
     HTT_H2T_MSG_TYPE_TX_MONITOR_CFG        = 0x1b,
+    HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ        = 0x1c,
+    HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ      = 0x1d,
+    HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ = 0x1e,
+    HTT_H2T_MSG_TYPE_MSI_SETUP             = 0x1f,
 
     /* keep this last */
     HTT_H2T_NUM_MSGS
@@ -2398,6 +2456,193 @@ PREPACK struct htt_tx_tcl_metadata {
          ((_var) |= ((_val) << HTT_TX_TCL_METADATA_PEER_ID_S)); \
      } while (0)
 
+/*------------------------------------------------------------------
+ *                 V2 Version of TCL Data Command
+ * V2 Version to support peer_id, vdev_id, svc_class_id and
+ * MLO global_seq all flavours of TCL Data Cmd.
+ *-----------------------------------------------------------------*/
+
+typedef enum {
+    HTT_TCL_METADATA_V2_TYPE_PEER_BASED         = 0,
+    HTT_TCL_METADATA_V2_TYPE_VDEV_BASED         = 1,
+    HTT_TCL_METADATA_V2_TYPE_SVC_ID_BASED       = 2,
+    HTT_TCL_METADATA_V2_TYPE_GLOBAL_SEQ_BASED   = 3,
+} htt_tcl_metadata_type_v2;
+
+/**
+ * @brief HTT TCL command number format
+ * @details
+ *  This structure is passed from host as tcl_data_cmd->tcl_cmd_number and
+ *  available to firmware as tcl_exit_base->tcl_status_number.
+ *  A_UINT32 is used to avoid endianness conversion problems.
+ *  tcl_status_number size is 16 bits, hence only 16 bits can be used.
+ */
+typedef struct {
+    A_UINT32
+        type:          2, /* vdev_id based or peer_id or svc_id or global seq based */
+        valid_htt_ext: 1, /* If set, tcl_exit_base->host_meta_info is valid */
+        vdev_id:       8,
+        pdev_id:       2,
+        host_inspected:1,
+        rsvd:          2,
+        padding:      16; /* These 16 bits cannot be used by FW for the tcl command */
+} htt_tx_tcl_vdev_metadata_v2;
+
+typedef struct {
+    A_UINT32
+        type:          2, /* vdev_id based or peer_id or svc_id or global seq based */
+        valid_htt_ext: 1, /* If set, tcl_exit_base->host_meta_info is valid */
+        peer_id:       13,
+        padding:       16; /* These 16 bits cannot be used by FW for the tcl command */
+} htt_tx_tcl_peer_metadata_v2;
+
+typedef struct {
+    A_UINT32
+        type:          2, /* vdev_id based or peer_id or svc_id or global seq based */
+        valid_htt_ext: 1, /* If set, tcl_exit_base->host_meta_info is valid */
+        svc_class_id:  8,
+        rsvd:          5,
+        padding:      16; /* These 16 bits cannot be used by FW for the tcl command */
+} htt_tx_tcl_svc_class_id_metadata;
+
+typedef struct {
+    A_UINT32
+        type:           2, /* vdev_id based or peer_id or svc_id or global seq based */
+        host_inspected: 1,
+        global_seq_no: 12,
+        rsvd:           1,
+        padding:       16; /* These 16 bits cannot be used by FW for the tcl command */
+} htt_tx_tcl_global_seq_metadata;
+
+PREPACK struct htt_tx_tcl_metadata_v2 {
+    union {
+        htt_tx_tcl_vdev_metadata_v2 vdev_meta_v2;
+        htt_tx_tcl_peer_metadata_v2 peer_meta_v2;
+        htt_tx_tcl_svc_class_id_metadata svc_class_id_meta;
+        htt_tx_tcl_global_seq_metadata global_seq_meta;
+    };
+} POSTPACK;
+
+/* DWORD 0 */
+#define HTT_TX_TCL_METADATA_TYPE_V2_M                      0x00000003
+#define HTT_TX_TCL_METADATA_TYPE_V2_S                      0
+
+/* Valid htt ext for V2 tcl data cmd used by VDEV, PEER and SVC_ID meta */
+#define HTT_TX_TCL_METADATA_V2_VALID_HTT_EXT_ID_M          0x00000004
+#define HTT_TX_TCL_METADATA_V2_VALID_HTT_EXT_ID_S          2
+
+/* VDEV V2 metadata */
+#define HTT_TX_TCL_METADATA_V2_VDEV_ID_M                   0x000007f8
+#define HTT_TX_TCL_METADATA_V2_VDEV_ID_S                   3
+#define HTT_TX_TCL_METADATA_V2_PDEV_ID_M                   0x00001800
+#define HTT_TX_TCL_METADATA_V2_PDEV_ID_S                   11
+#define HTT_TX_TCL_METADATA_V2_HOST_INSPECTED_M            0x00002000
+#define HTT_TX_TCL_METADATA_V2_HOST_INSPECTED_S            13
+
+/* PEER V2 metadata */
+#define HTT_TX_TCL_METADATA_V2_PEER_ID_M                   0x0000fff8
+#define HTT_TX_TCL_METADATA_V2_PEER_ID_S                   3
+
+/* SVC_CLASS_ID metadata */
+#define HTT_TX_TCL_METADATA_SVC_CLASS_ID_M                 0x000007f8
+#define HTT_TX_TCL_METADATA_SVC_CLASS_ID_S                 3
+
+/* Global Seq no metadata */
+#define HTT_TX_TCL_METADATA_GLBL_SEQ_HOST_INSPECTED_M      0x00000004
+#define HTT_TX_TCL_METADATA_GLBL_SEQ_HOST_INSPECTED_S      2
+#define HTT_TX_TCL_METADATA_GLBL_SEQ_NO_M                  0x00007ff8
+#define HTT_TX_TCL_METADATA_GLBL_SEQ_NO_S                  3
+
+
+/*----- Get and Set V2 type field in Vdev, Peer, Svc_Class_Id, Global_seq_no */
+#define HTT_TX_TCL_METADATA_TYPE_V2_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_TYPE_V2_M) >> \
+    HTT_TX_TCL_METADATA_TYPE_V2_S)
+#define HTT_TX_TCL_METADATA_TYPE_V2_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_TYPE_V2, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_TYPE_V2_S)); \
+     } while (0)
+
+#define HTT_TX_TCL_METADATA_V2_VALID_HTT_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_V2_VALID_HTT_EXT_ID_M) >> \
+    HTT_TX_TCL_METADATA_V2_VALID_HTT_EXT_ID_S)
+#define HTT_TX_TCL_METADATA_V2_VALID_HTT_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_V2_VALID_HTT_EXT_ID, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_V2_VALID_HTT_EXT_ID_S)); \
+     } while (0)
+
+/*----- Get and Set V2 type field in Vdev meta fields ----*/
+#define HTT_TX_TCL_METADATA_V2_VDEV_ID_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_V2_VDEV_ID_M) >> \
+    HTT_TX_TCL_METADATA_V2_VDEV_ID_S)
+#define HTT_TX_TCL_METADATA_V2_VDEV_ID_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_V2_VDEV_ID, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_V2_VDEV_ID_S)); \
+     } while (0)
+
+#define HTT_TX_TCL_METADATA_V2_PDEV_ID_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_V2_PDEV_ID_M) >> \
+    HTT_TX_TCL_METADATA_V2_PDEV_ID_S)
+#define HTT_TX_TCL_METADATA_V2_PDEV_ID_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_V2_PDEV_ID, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_V2_PDEV_ID_S)); \
+     } while (0)
+
+#define HTT_TX_TCL_METADATA_V2_HOST_INSPECTED_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_V2_HOST_INSPECTED_M) >> \
+    HTT_TX_TCL_METADATA_V2_HOST_INSPECTED_S)
+#define HTT_TX_TCL_METADATA_V2_HOST_INSPECTED_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_V2_HOST_INSPECTED, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_V2_HOST_INSPECTED_S)); \
+     } while (0)
+
+/*----- Get and Set V2 type field in Peer meta fields ----*/
+#define HTT_TX_TCL_METADATA_V2_PEER_ID_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_V2_PEER_ID_M) >> \
+    HTT_TX_TCL_METADATA_V2_PEER_ID_S)
+#define HTT_TX_TCL_METADATA_V2_PEER_ID_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_V2_PEER_ID, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_V2_PEER_ID_S)); \
+     } while (0)
+
+/*----- Get and Set V2 type field in Service Class fields ----*/
+#define HTT_TX_TCL_METADATA_SVC_CLASS_ID_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_SVC_CLASS_ID_M) >> \
+    HTT_TX_TCL_METADATA_SVC_CLASS_ID_S)
+#define HTT_TX_TCL_METADATA_SVC_CLASS_ID_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_SVC_CLASS_ID, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_SVC_CLASS_ID_S)); \
+     } while (0)
+
+/*----- Get and Set V2 type field in Global sequence fields ----*/
+#define HTT_TX_TCL_METADATA_GLBL_SEQ_HOST_INSPECTED_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_GLBL_SEQ_HOST_INSPECTED_M) >> \
+    HTT_TX_TCL_METADATA_GLBL_SEQ_HOST_INSPECTED_S)
+#define HTT_TX_TCL_METADATA_GLBL_SEQ_HOST_INSPECTED_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_GLBL_SEQ_HOST_INSPECTED, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_GLBL_SEQ_HOST_INSPECTED_S)); \
+     } while (0)
+
+#define HTT_TX_TCL_METADATA_GLBL_SEQ_NO_GET(_var) \
+    (((_var) & HTT_TX_TCL_METADATA_GLBL_SEQ_NO_M) >> \
+    HTT_TX_TCL_METADATA_GLBL_SEQ_NO_S)
+#define HTT_TX_TCL_METADATA_GLBL_SEQ_NO_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_TCL_METADATA_GLBL_SEQ_NO, _val); \
+         ((_var) |= ((_val) << HTT_TX_TCL_METADATA_GLBL_SEQ_NO_S)); \
+     } while (0)
+
+/*------------------------------------------------------------------
+ *                 End V2 Version of TCL Data Command
+ *-----------------------------------------------------------------*/
 
 typedef enum {
    HTT_TX_FW2WBM_TX_STATUS_OK,
@@ -2420,6 +2665,7 @@ typedef enum {
    HTT_TX_FW2WBM_REINJECT_REASON_ARP,
    HTT_TX_FW2WBM_REINJECT_REASON_DHCP,
    HTT_TX_FW2WBM_REINJECT_REASON_FLOW_CONTROL,
+   HTT_TX_FW2WBM_REINJECT_REASON_MLO_MCAST,
 
    HTT_TX_FW2WBM_REINJECT_REASON_MAX,
 } htt_tx_fw2wbm_reinject_reason_t;
@@ -2593,6 +2839,88 @@ PREPACK struct htt_tx_wbm_completion_v2 {
          HTT_CHECK_SET_VAL(HTT_TX_WBM_COMPLETION_V2_EXP_FRAME, _val); \
          ((_var) |= ((_val) << HTT_TX_WBM_COMPLETION_V2_EXP_FRAME_S)); \
      } while (0)
+
+/**
+ * @brief HTT TX WBM Completion from firmware to host (V3)
+ * @details
+ *  This structure applies only to WLAN chips that contain WLAN Buffer Mgmt
+ *  (WBM) offload HW.
+ *  This structure is passed from firmware to host overlayed on wbm_release_ring
+ *  For software based completions, release_source_module will
+ *  be set to WIFIRELEASE_SOURCE_FW_E. Host SW is expected to inspect using
+ *  struct wbm_release_ring and then switch to this after looking at
+ *  release_source_module.
+ *  Due to overlap with WBM block, htt_tx_wbm_completion_v3 will be used
+ *  by new generations of targets.
+ */
+PREPACK struct htt_tx_wbm_completion_v3 {
+    A_UINT32
+        used_by_hw0;              /* Refer to struct wbm_release_ring */
+    A_UINT32
+        used_by_hw1;              /* Refer to struct wbm_release_ring */
+    A_UINT32
+        used_by_hw2:           13, /* Refer to struct wbm_release_ring */
+        tx_status:             4,  /* Takes enum values of htt_tx_fw2wbm_tx_status_t */
+        used_by_hw3:           15;
+    A_UINT32
+        reinject_reason:       4,  /* Takes enum values of htt_tx_fw2wbm_reinject_reason_t */
+        exception_frame:       1,
+        rsvd0:                 27; /* For future use */
+    A_UINT32
+        data0:                 32; /* data0,1 and 2 changes based on tx_status type
+                                    * if HTT_TX_FW2WBM_TX_STATUS_OK or HTT_TX_FW2WBM_TX_STATUS_DROP
+                                    * or HTT_TX_FW2WBM_TX_STATUS_TTL, struct htt_tx_wbm_transmit_status will be used.
+                                    * if HTT_TX_FW2WBM_TX_STATUS_REINJECT, struct htt_tx_wbm_reinject_status will be used.
+                                    * if HTT_TX_FW2WBM_TX_STATUS_MEC_NOTIFY, struct htt_tx_wbm_mec_addr_notify will be used.
+                                    */
+    A_UINT32
+        data1:                 32;
+    A_UINT32
+        data2:                 32;
+    A_UINT32
+        rsvd1:                 20,
+        used_by_hw4:           12; /* Refer to struct wbm_release_ring */
+} POSTPACK;
+
+
+#define HTT_TX_WBM_COMPLETION_V3_TX_STATUS_M                 0x0001E000
+#define HTT_TX_WBM_COMPLETION_V3_TX_STATUS_S                 13
+#define HTT_TX_WBM_COMPLETION_V3_REINJECT_REASON_M           0x0000000F
+#define HTT_TX_WBM_COMPLETION_V3_REINJECT_REASON_S           0
+#define HTT_TX_WBM_COMPLETION_V3_EXP_FRAME_M                 0x00000010
+#define HTT_TX_WBM_COMPLETION_V3_EXP_FRAME_S                 4
+
+
+#define HTT_TX_WBM_COMPLETION_V3_TX_STATUS_GET(_var) \
+    (((_var) & HTT_TX_WBM_COMPLETION_V3_TX_STATUS_M) >> \
+    HTT_TX_WBM_COMPLETION_V3_TX_STATUS_S)
+
+#define HTT_TX_WBM_COMPLETION_V3_TX_STATUS_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_WBM_COMPLETION_V3_TX_STATUS, _val); \
+         ((_var) |= ((_val) << HTT_TX_WBM_COMPLETION_V3_TX_STATUS_S)); \
+     } while (0)
+
+#define HTT_TX_WBM_COMPLETION_V3_REINJECT_REASON_GET(_var) \
+    (((_var) & HTT_TX_WBM_COMPLETION_V3_REINJECT_REASON_M) >> \
+    HTT_TX_WBM_COMPLETION_V3_REINJECT_REASON_S)
+
+#define HTT_TX_WBM_COMPLETION_V3_REINJECT_REASON_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_WBM_COMPLETION_V3_REINJECT_REASON, _val); \
+         ((_var) |= ((_val) << HTT_TX_WBM_COMPLETION_V3_REINJECT_REASON_S)); \
+     } while (0)
+
+#define HTT_TX_WBM_COMPLETION_V3_EXP_FRAME_GET(_var) \
+    (((_var) & HTT_TX_WBM_COMPLETION_V3_EXP_FRAME_M) >> \
+    HTT_TX_WBM_COMPLETION_V3_EXP_FRAME_S)
+
+#define HTT_TX_WBM_COMPLETION_V3_EXP_FRAME_SET(_var, _val) \
+     do { \
+         HTT_CHECK_SET_VAL(HTT_TX_WBM_COMPLETION_V3_EXP_FRAME, _val); \
+         ((_var) |= ((_val) << HTT_TX_WBM_COMPLETION_V3_EXP_FRAME_S)); \
+     } while (0)
+
 
 typedef enum {
     TX_FRAME_TYPE_UNDEFINED = 0,
@@ -4525,6 +4853,112 @@ PREPACK struct htt_wdi_ipa_op_request_t
         HTT_CHECK_SET_VAL(HTT_WDI_IPA_OP_REQUEST_OP_CODE, _val);  \
         ((_var) |= ((_val) << HTT_WDI_IPA_OP_REQUEST_OP_CODE_S)); \
     } while (0)
+
+/*
+ * @brief  host -> target HTT_MSI_SETUP message
+ *
+ * MSG_TYPE => HTT_H2T_MSG_TYPE_MSI_SETUP
+ *
+ * @details
+ * After target is booted up, host can send MSI setup message so that
+ * target sets up HW registers based on setup message.
+ *
+ *    The message would appear as follows:
+ *    |31           24|23             16|15|14           8|7               0|
+ *    |---------------+-----------------+-----------------+-----------------|
+ *    |    reserved   |      msi_type   |    pdev_id      |    msg_type     |
+ *    |---------------------------------------------------------------------|
+ *    |                          msi_addr_lo                                |
+ *    |---------------------------------------------------------------------|
+ *    |                          msi_addr_hi                                |
+ *    |---------------------------------------------------------------------|
+ *    |                          msi_data                                   |
+ *    |---------------------------------------------------------------------|
+ *
+ * The message is interpreted as follows:
+ * dword0  - b'0:7   - msg_type: This will be set to
+ *                     0x1f (HTT_H2T_MSG_TYPE_MSI_SETUP)
+ *           b'8:15  - pdev_id:
+ *                     0 (for rings at SOC/UMAC level),
+ *                     1/2/3 mac id (for rings at LMAC level)
+ *           b'16:23 - msi_type: identify which msi registers need to be setup
+ *                     more details can be got from enum htt_msi_setup_type
+ *           b'24:31 - reserved
+ * dword8  - b'0:31  - ring_msi_addr_lo: Lower 32bits of MSI cfg address
+ * dword9  - b'0:31  - ring_msi_addr_hi: Upper 32bits of MSI cfg address
+ * dword10 - b'0:31  - ring_msi_data: MSI data configured by host
+ */
+PREPACK struct htt_msi_setup_t {
+    A_UINT32 msg_type:  8,
+             pdev_id:   8,
+             msi_type:  8,
+             reserved:  8;
+    A_UINT32 msi_addr_lo;
+    A_UINT32 msi_addr_hi;
+    A_UINT32 msi_data;
+} POSTPACK;
+
+enum htt_msi_setup_type {
+    HTT_PPDU_END_MSI_SETUP_TYPE,
+
+    /* Insert new types here*/
+};
+
+#define HTT_MSI_SETUP_SZ    (sizeof(struct htt_msi_setup_t))
+#define HTT_MSI_SETUP_PDEV_ID_M                  0x0000ff00
+#define HTT_MSI_SETUP_PDEV_ID_S                  8
+#define HTT_MSI_SETUP_PDEV_ID_GET(_var) \
+        (((_var) & HTT_MSI_SETUP_PDEV_ID_M) >> \
+                HTT_MSI_SETUP_PDEV_ID_S)
+#define HTT_MSI_SETUP_PDEV_ID_SET(_var, _val) \
+        do { \
+            HTT_CHECK_SET_VAL(HTT_MSI_SETUP_PDEV_ID, _val); \
+            ((_var) |= ((_val) << HTT_MSI_SETUP_PDEV_ID_S)); \
+        } while (0)
+
+#define HTT_MSI_SETUP_MSI_TYPE_M                  0x00ff0000
+#define HTT_MSI_SETUP_MSI_TYPE_S                  16
+#define HTT_MSI_SETUP_MSI_TYPE_GET(_var) \
+        (((_var) & HTT_MSI_SETUP_MSI_TYPE_M) >> \
+                HTT_MSI_SETUP_MSI_TYPE_S)
+#define HTT_MSI_SETUP_MSI_TYPE_SET(_var, _val) \
+        do { \
+            HTT_CHECK_SET_VAL(HTT_MSI_SETUP_MSI_TYPE, _val); \
+            ((_var) |= ((_val) << HTT_MSI_SETUP_MSI_TYPE_S)); \
+        } while (0)
+
+#define HTT_MSI_SETUP_MSI_ADDR_LO_M        0xffffffff
+#define HTT_MSI_SETUP_MSI_ADDR_LO_S        0
+#define HTT_MSI_SETUP_MSI_ADDR_LO_GET(_var) \
+        (((_var) & HTT_MSI_SETUP_MSI_ADDR_LO_M) >> \
+                HTT_MSI_SETUP_MSI_ADDR_LO_S)
+#define HTT_MSI_SETUP_MSI_ADDR_LO_SET(_var, _val) \
+        do { \
+            HTT_CHECK_SET_VAL(HTT_MSI_SETUP_MSI_ADDR_LO, _val); \
+            ((_var) |= ((_val) << HTT_MSI_SETUP_MSI_ADDR_LO_S)); \
+        } while (0)
+
+#define HTT_MSI_SETUP_MSI_ADDR_HI_M        0xffffffff
+#define HTT_MSI_SETUP_MSI_ADDR_HI_S        0
+#define HTT_MSI_SETUP_MSI_ADDR_HI_GET(_var) \
+        (((_var) & HTT_MSI_SETUP_MSI_ADDR_HI_M) >> \
+                HTT_MSI_SETUP_MSI_ADDR_HI_S)
+#define HTT_MSI_SETUP_MSI_ADDR_HI_SET(_var, _val) \
+        do { \
+            HTT_CHECK_SET_VAL(HTT_MSI_SETUP_MSI_ADDR_HI, _val); \
+            ((_var) |= ((_val) << HTT_MSI_SETUP_MSI_ADDR_HI_S)); \
+        } while (0)
+
+#define HTT_MSI_SETUP_MSI_DATA_M          0xffffffff
+#define HTT_MSI_SETUP_MSI_DATA_S          0
+#define HTT_MSI_SETUP_MSI_DATA_GET(_var) \
+        (((_var) & HTT_MSI_SETUP_MSI_DATA_M) >> \
+                HTT_MSI_SETUP_MSI_DATA_S)
+#define HTT_MSI_SETUP_MSI_DATA_SET(_var, _val) \
+        do { \
+            HTT_CHECK_SET_VAL(HTT_MSI_SETUP_MSI_DATA, _val); \
+            ((_var) |= ((_val) << HTT_MSI_SETUP_MSI_DATA_S)); \
+        } while (0)
 
 /*
  * @brief  host -> target  HTT_SRING_SETUP message
@@ -8496,6 +8930,164 @@ PREPACK struct htt_h2t_vdevs_txrx_stats_cfg {
         } while (0)
 
 
+/*
+ * MSG_TYPE => HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ
+ *
+ * @details
+ * The SAWF_DEF_QUEUES_MAP_REQ message is sent by the host to link
+ * the default MSDU queues for one of the TIDs within the specified peer
+ * to the specified service class.
+ * The TID is indirectly specified - each service class is associated
+ * with a TID.  All default MSDU queues for this peer-TID will be
+ * linked to the service class in question.
+ *
+ * |31                          16|15           8|7            0|
+ * |------------------------------+--------------+--------------|
+ * |             peer ID          | svc class ID |   msg type   |
+ * |------------------------------------------------------------|
+ * Header fields:
+ * dword0 - b'7:0       - msg_type: This will be set to
+ *                        0x1c (HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ)
+ *          b'15:8      - service class ID
+ *          b'31:16     - peer ID
+ */
+
+PREPACK struct htt_h2t_sawf_def_queues_map_req {
+    A_UINT32 msg_type          :8,
+             svc_class_id      :8,
+             peer_id           :16;
+} POSTPACK;
+
+#define HTT_SAWF_DEF_QUEUES_MAP_REQ_BYTES 4
+
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_SVC_CLASS_ID_M               0x0000FF00
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_SVC_CLASS_ID_S               8
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_SVC_CLASS_ID_GET(_var) \
+    (((_var) & HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_SVC_CLASS_ID_M) >> \
+     HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_SVC_CLASS_ID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_MAP_REQ_SVC_CLASS_ID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_SVC_CLASS_ID, _val); \
+        ((_var) |= ((_val) << HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_SVC_CLASS_ID_S));\
+    } while (0)
+
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_PEER_ID_M                    0xFFFF0000
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_PEER_ID_S                    16
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_PEER_ID_GET(_var) \
+    (((_var) & HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_PEER_ID_M) >> \
+     HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_PEER_ID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_MAP_REQ_PEER_ID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_PEER_ID, _val); \
+        ((_var) |= ((_val) << HTT_H2T_SAWF_DEF_QUEUES_MAP_REQ_PEER_ID_S)); \
+    } while (0)
+
+
+/*
+ * MSG_TYPE => HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ
+ *
+ * @details
+ * The SAWF_DEF_QUEUES_UNMAP_REQ message is sent by the host to
+ * remove the linkage of the specified peer-TID's MSDU queues to
+ * service classes.
+ *
+ * |31                          16|15  12|11    8|7            0|
+ * |------------------------------+------+-------+--------------|
+ * |             peer ID          | rsvd |  TID  |   msg type   |
+ * |------------------------------------------------------------|
+ * Header fields:
+ * dword0 - b'7:0       - msg_type: This will be set to
+ *                        0x1d (HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ)
+ *          b'11:8      - TID
+ * dword1 - b'31:16     - peer ID
+ */
+
+PREPACK struct htt_h2t_sawf_def_queues_unmap_req {
+    A_UINT32 msg_type          :8,
+             tid               :4,
+             reserved          :4,
+             peer_id           :16;
+} POSTPACK;
+
+#define HTT_SAWF_DEF_QUEUES_UNMAP_REQ_BYTES 4
+
+#define HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_TID_M                      0x00000F00
+#define HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_TID_S                      8
+#define HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_TID_GET(_var) \
+    (((_var) & HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_TID_M) >> \
+     HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_TID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_UNMAP_REQ_TID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_TID, _val); \
+        ((_var) |= ((_val) << HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_TID_S));\
+    } while (0)
+
+#define HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_PEER_ID_M                  0xFFFF0000
+#define HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_PEER_ID_S                  16
+#define HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_PEER_ID_GET(_var) \
+    (((_var) & HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_PEER_ID_M) >> \
+     HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_PEER_ID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_UNMAP_REQ_PEER_ID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_PEER_ID, _val); \
+        ((_var) |= ((_val) << HTT_H2T_SAWF_DEF_QUEUES_UNMAP_REQ_PEER_ID_S)); \
+    } while (0)
+
+
+/*
+ * MSG_TYPE => HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ
+ *
+ * @details
+ * The SAWF_DEF_QUEUES_MAP_REPORT_REQ message is sent by the host to
+ * request the target to report what service class the default MSDU queues
+ * of the specified peer-TID are linked to.
+ * The target will respond with a SAWF_DEF_QUEUES_MAP_REPORT_CONF message
+ * to report what service class (if any) the peer-TID's default MSDU queues
+ * are linked to.
+ *
+ * |31                          16|15  12|11    8|7            0|
+ * |------------------------------+------+-------+--------------|
+ * |             peer ID          | rsvd |  TID  |   msg type   |
+ * |------------------------------------------------------------|
+ * Header fields:
+ * dword0 - b'7:0       - msg_type: This will be set to
+ *                        0x1e (HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ)
+ *          b'11:8      - TID
+ * dword1 - b'31:16     - peer ID
+ */
+
+PREPACK struct htt_h2t_sawf_def_queues_map_report_req {
+    A_UINT32 msg_type          :8,
+             tid               :4,
+             reserved          :4,
+             peer_id           :16;
+} POSTPACK;
+
+#define HTT_SAWF_DEF_QUEUES_MAP_REPORT_REQ_BYTES 4
+
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_TID_M                 0x00000F00
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_TID_S                 8
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_TID_GET(_var) \
+    (((_var) & HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_TID_M) >> \
+     HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_TID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_MAP_REPORT_REQ_TID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_TID, _val); \
+        ((_var) |= ((_val) << HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_TID_S));\
+    } while (0)
+
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_PEER_ID_M             0xFFFF0000
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_PEER_ID_S             16
+#define HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_PEER_ID_GET(_var) \
+    (((_var) & HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_PEER_ID_M) >> \
+     HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_PEER_ID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_MAP_REPORT_REQ_PEER_ID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_PEER_ID, _val); \
+        ((_var) |= ((_val) << HTT_H2T_SAWF_DEF_QUEUES_MAP_REPORT_REQ_PEER_ID_S)); \
+    } while (0)
+
+
 
 /*=== target -> host messages ===============================================*/
 
@@ -8551,6 +9143,7 @@ enum htt_t2h_msg_type {
     HTT_T2H_MSG_TYPE_MLO_RX_PEER_UNMAP             = 0x2a,
     HTT_T2H_MSG_TYPE_PEER_MAP_V3                   = 0x2b,
     HTT_T2H_MSG_TYPE_VDEVS_TXRX_STATS_PERIODIC_IND = 0x2c,
+    HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF        = 0x2d,
 
 
     HTT_T2H_MSG_TYPE_TEST,
@@ -15945,7 +16538,28 @@ struct htt_ul_ofdma_user_info_v0_bitmap_w1 {
     HTT_UL_OFDMA_USER_INFO_V0_BITMAP_W1
 };
 
-/* htt_up_ofdma_user_info_v0_bitmap shows what bitfields are within the info */
+
+#define HTT_UL_OFDMA_USER_INFO_V1_BITMAP_W0 \
+    A_UINT32 w0_fw_rsvd:27; \
+    A_UINT32 w0_sub_version:3;  /* set to a value of “0” on WKK/Beryllium targets (future expansion) */ \
+    A_UINT32 w0_valid:1; /* field aligns with V0 definition */ \
+    A_UINT32 w0_version:1;  /* set to a value of “1” to indicate picking htt_ul_ofdma_user_info_v1_bitmap (field aligns with V0 definition) */
+
+struct htt_ul_ofdma_user_info_v1_bitmap_w0 {
+    HTT_UL_OFDMA_USER_INFO_V1_BITMAP_W0
+};
+
+#define HTT_UL_OFDMA_USER_INFO_V1_BITMAP_W1 \
+    A_UINT32 w1_unused_0_to_18:19; /* Guaranteed to be set to 0, can be used for future expansion without bumping version again. */ \
+    A_UINT32 w1_trig_type:4; \
+    A_UINT32 w1_unused_23_to_31:9; /* Guaranteed to be set to 0, can be used for future expansion without bumping version again. */
+
+struct htt_ul_ofdma_user_info_v1_bitmap_w1 {
+    HTT_UL_OFDMA_USER_INFO_V1_BITMAP_W1
+};
+
+
+/* htt_ul_ofdma_user_info_v0_bitmap shows what bitfields are within the info */
 PREPACK struct htt_ul_ofdma_user_info_v0_bitmap {
     union {
         A_UINT32 word0;
@@ -15960,6 +16574,27 @@ PREPACK struct htt_ul_ofdma_user_info_v0_bitmap {
         };
     };
 } POSTPACK;
+
+/*
+ * htt_ul_ofdma_user_info_v1_bitmap bits are aligned to
+ * htt_ul_ofdma_user_info_v0_bitmap, based on the w0_version
+ * this should be picked.
+ */
+PREPACK struct htt_ul_ofdma_user_info_v1_bitmap {
+    union {
+        A_UINT32 word0;
+        struct {
+            HTT_UL_OFDMA_USER_INFO_V1_BITMAP_W0
+        };
+    };
+    union {
+        A_UINT32 word1;
+        struct {
+            HTT_UL_OFDMA_USER_INFO_V1_BITMAP_W1
+        };
+    };
+} POSTPACK;
+
 
 enum HTT_UL_OFDMA_TRIG_TYPE {
     HTT_UL_OFDMA_USER_INFO_V0_TRIG_TYPE_BASIC = 0,
@@ -16948,7 +17583,7 @@ typedef struct {
     A_UINT32 tx_msdu_cnt_lo;
     A_UINT32 tx_msdu_cnt_hi;
 
-    /* tx excessive retry discarded msdu cnt*/
+    /* tx excessive retry discarded msdu cnt */
     A_UINT32 tx_msdu_excessive_retry_discard_cnt_lo;
     A_UINT32 tx_msdu_excessive_retry_discard_cnt_hi;
 
@@ -16959,6 +17594,122 @@ typedef struct {
     /* discarded tx msdus cnt coz of time to live expiry */
     A_UINT32 tx_msdu_ttl_expire_drop_cnt_lo;
     A_UINT32 tx_msdu_ttl_expire_drop_cnt_hi;
+
+    /* tx excessive retry discarded msdu byte cnt */
+    A_UINT32 tx_msdu_excessive_retry_discard_byte_cnt_lo;
+    A_UINT32 tx_msdu_excessive_retry_discard_byte_cnt_hi;
+
+    /* TX congestion ctrl msdu drop byte cnt */
+    A_UINT32 tx_msdu_cong_ctrl_drop_byte_cnt_lo;
+    A_UINT32 tx_msdu_cong_ctrl_drop_byte_cnt_hi;
+
+    /* discarded tx msdus byte cnt coz of time to live expiry */
+    A_UINT32 tx_msdu_ttl_expire_drop_byte_cnt_lo;
+    A_UINT32 tx_msdu_ttl_expire_drop_byte_cnt_hi;
 } htt_t2h_vdev_txrx_stats_hw_stats_tlv;
+
+/*
+ * MSG_TYPE => HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF
+ *
+ * @details
+ * The SAWF_DEF_QUEUES_MAP_REPORT_CONF message is sent by the target in
+ * response to a SAWF_DEF_QUEUES_MAP_REPORT_REQ from the host.
+ * The SAWF_DEF_QUEUES_MAP_REPORT_CONF will show which service class
+ * the default MSDU queues of the peer-TID specified in the
+ * SAWF_DEF_QUEUES_MAP_REPORT_REQ message are linked to.
+ * If the default MSDU queues of the specified peer-TID are not linked to
+ * a service class, the status field of the SAWF_DEF_QUEUES_MAP_REPORT_CONF
+ * will specify that no such mapping exists of the default MSDU queues to a
+ * service class.
+ *
+ * |31                          16|15  12|11    8|7            0|
+ * |------------------------------+------+-------+--------------|
+ * |             peer ID          | rsvd |  TID  |   msg type   |
+ * |------------------------------+--------------+--------------|
+ * |             reserved         | svc class ID |    status    |
+ * |------------------------------------------------------------|
+ * Header fields:
+ * dword0 - b'7:0       - msg_type: This will be set to
+ *                        0x2d (HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF)
+ *          b'11:8      - TID
+ *          b'31:16     - peer ID
+ * dword1 - b'7:0       - status (htt_t2h_sawf_def_queues_map_report_status)
+ *          b'15:8      - svc class ID (only valid if status == MAPPED)
+ */
+
+enum htt_t2h_sawf_def_queues_map_report_status {
+    /* MAPPED:
+     * The default MSDU queues for the peer-TID are linked to a service class.
+     * The svc_class_id field shows which service class the default MSDU queues
+     * are associated with.
+     */
+    HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_STATUS_MAPPED = 0,
+    /* UNMAPPED:
+     * The default MSDU queues for the peer-TID are not linked to any
+     * service class.
+     */
+    HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_STATUS_UNMAPPED = 1,
+    /* INVALID_IDS:
+     * One or more of pdev_id, vdev_id, peer_id, and TID were invalid.
+     */
+    HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_INVALID_IDS = 2,
+};
+
+PREPACK struct htt_t2h_sawf_def_queues_map_report_conf {
+    A_UINT32 msg_type          :8,
+             tid               :4,
+             reserved0         :4,
+             peer_id           :16;
+    A_UINT32 status            :8,
+             svc_class_id      :8,
+             reserved1         :16;
+} POSTPACK;
+
+#define HTT_SAWF_DEF_QUEUES_MAP_REPORT_CONF_BYTES 8
+
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_TID_M                0x00000F00
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_TID_S                8
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_TID_GET(_var) \
+    (((_var) & HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_TID_M) >> \
+     HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_TID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_MAP_REPORT_CONF_TID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_TID, _val); \
+        ((_var) |= ((_val) << HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_TID_S));\
+    } while (0)
+
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_PEER_ID_M            0xFFFF0000
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_PEER_ID_S            16
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_PEER_ID_GET(_var) \
+    (((_var) & HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_PEER_ID_M) >> \
+     HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_PEER_ID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_MAP_REPORT_CONF_PEER_ID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_PEER_ID, _val); \
+        ((_var) |= ((_val) << HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_PEER_ID_S)); \
+    } while (0)
+
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_STATUS_M             0x000000FF
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_STATUS_S             0
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_STATUS_GET(_var) \
+    (((_var) & HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_STATUS_M) >> \
+     HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_STATUS_S)
+#define HTT_RX_SAWF_DEF_QUEUES_MAP_REPORT_CONF_STATUS_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_STATUS, _val); \
+        ((_var) |= ((_val) << HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_STATUS_S)); \
+    } while (0)
+
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_SVC_CLASS_ID_M       0x0000FF00
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_SVC_CLASS_ID_S       8
+#define HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_SVC_CLASS_ID_GET(_var) \
+    (((_var) & HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_SVC_CLASS_ID_M) >> \
+     HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_SVC_CLASS_ID_S)
+#define HTT_RX_SAWF_DEF_QUEUES_MAP_REPORT_CONF_SVC_CLASS_ID_SET(_var, _val) \
+    do { \
+        HTT_CHECK_SET_VAL(HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_SVC_CLASS_ID, _val); \
+        ((_var) |= ((_val) << HTT_T2H_SAWF_DEF_QUEUES_MAP_REPORT_CONF_SVC_CLASS_ID_S)); \
+    } while (0)
+
 
 #endif
