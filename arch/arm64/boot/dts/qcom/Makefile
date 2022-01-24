@@ -156,6 +156,7 @@ ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 		sa6155p-v2-adp-star-overlay.dtbo \
 		sa6155p-v2-adp-air-overlay.dtbo \
 		qcs610-iot-overlay.dtbo \
+		qcs610-ipc-overlay.dtbo \
 		qcs610-opk-overlay.dtbo \
 		qcs410-iot-overlay.dtbo \
 		prairie-iot-idp-overlay.dtbo \
