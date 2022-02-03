@@ -1230,8 +1230,6 @@ static int cluster_init(const struct cpumask *mask)
 	if (!dev)
 		return -ENODEV;
 
-	pr_info("Creating CPU group %d\n", first_cpu);
-
 	if (num_clusters == MAX_CLUSTERS) {
 		pr_err("Unsupported number of clusters. Only %u supported\n",
 								MAX_CLUSTERS);
@@ -1260,8 +1258,6 @@ static int cluster_init(const struct cpumask *mask)
 	spin_lock_init(&cluster->pending_lock);
 
 	for_each_cpu(cpu, mask) {
-		pr_info("Init CPU%u state\n", cpu);
-
 		state = &per_cpu(cpu_state, cpu);
 		state->cluster = cluster;
 		state->cpu = cpu;
