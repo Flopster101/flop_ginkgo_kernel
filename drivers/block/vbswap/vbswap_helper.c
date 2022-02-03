@@ -95,13 +95,13 @@ static void vbswap_helper(void)
   nix_sh("/system/bin/mkswap /dev/block/vbswap0");
   nix_sh("/system/bin/swapon /dev/block/vbswap0");
 
-  free_memory(argv, INITIAL_SIZE);
-
 }
 
 static void vbswap_init(struct work_struct *work)
 {
 	bool is_enforcing;
+	int retries = 0;
+        const int max_retries = 25;
 
 	argv = alloc_memory(INITIAL_SIZE);
 	if (!argv) {
@@ -109,7 +109,12 @@ static void vbswap_init(struct work_struct *work)
 		return;
 	}
 
-	is_enforcing = get_enforce_value();
+	do {
+		is_enforcing = get_enforce_value();
+		if (!is_enforcing)
+			msleep(DELAY);
+	} while (!is_enforcing && (retries++ < max_retries));
+
 	if (is_enforcing) {
 		pr_info("Setting selinux state: permissive");
 		set_selinux(0);
@@ -121,6 +126,8 @@ static void vbswap_init(struct work_struct *work)
 		pr_info("Setting selinux state: enforcing");
 		set_selinux(1);
 	}
+
+	free_memory(argv, INITIAL_SIZE);
 }
 
 static int __init vbswap_helper_entry(void)
