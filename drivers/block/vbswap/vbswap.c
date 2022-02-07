@@ -217,45 +217,6 @@ static const struct block_device_operations vbswap_fops = {
 	.owner = THIS_MODULE
 };
 
-static ssize_t disksize_show(struct device *dev,
-			     struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%llu\n", vbswap_disksize);
-}
-
-static ssize_t disksize_store(struct device *dev,
-			      struct device_attribute *attr, const char *buf,
-			      size_t len)
-{
-	return len;
-}
-
-static ssize_t max_comp_streams_show(struct device *dev,
-				     struct device_attribute *attr, char *buf)
-{
-	return scnprintf(buf, PAGE_SIZE, "%d\n", num_online_cpus());
-}
-
-static ssize_t max_comp_streams_store(struct device *dev,
-				      struct device_attribute *attr, const char *buf,
-				      size_t len)
-{
-	return len;
-}
-
-static DEVICE_ATTR(disksize, S_IRUGO | S_IWUSR, disksize_show, disksize_store);
-static DEVICE_ATTR(max_comp_streams, S_IRUGO | S_IWUSR, max_comp_streams_show, max_comp_streams_store); 
-
-static struct attribute *vbswap_disk_attrs[] = {
-	&dev_attr_disksize.attr,
-	&dev_attr_max_comp_streams.attr,
-	NULL,
-};
-
-static struct attribute_group vbswap_disk_attr_group = {
-	.attrs = vbswap_disk_attrs,
-};
-
 static void set_disksize(void)
 {
 	vbswap_disksize = PAGE_ALIGN((u64)SZ_1G * CONFIG_VBSWAP_DISKSIZE);
@@ -265,7 +226,7 @@ static void set_disksize(void)
 
 static int create_device(void)
 {
-	int ret;
+	int ret = 0;
 
 	/* gendisk structure */
 	vbswap_disk = alloc_disk(1);
@@ -290,7 +251,7 @@ static int create_device(void)
 	vbswap_disk->first_minor = 0;
 	vbswap_disk->fops = &vbswap_fops;
 	vbswap_disk->private_data = NULL;
-	snprintf(vbswap_disk->disk_name, 16, "zram%d", 0);
+	snprintf(vbswap_disk->disk_name, 16, "vbswap%d", 0);
 	set_disksize();
 
 	/*
@@ -306,23 +267,12 @@ static int create_device(void)
 
 	add_disk(vbswap_disk);
 
-	ret = sysfs_create_group(&disk_to_dev(vbswap_disk)->kobj,
-				 &vbswap_disk_attr_group);
-	if (ret < 0) {
-		pr_err("%s %d: Error creating sysfs group\n",
-		       __func__, __LINE__);
-		goto out_free_queue;
-	}
-
 	/* vbswap devices sort of resembles non-rotational disks */
 	queue_flag_set_unlocked(QUEUE_FLAG_NONROT, vbswap_disk->queue);
 	queue_flag_clear_unlocked(QUEUE_FLAG_ADD_RANDOM, vbswap_disk->queue);
 
 out:
 	return ret;
-
-out_free_queue:
-	blk_cleanup_queue(vbswap_disk->queue);
 
 out_put_disk:
 	put_disk(vbswap_disk);
@@ -334,7 +284,7 @@ static int __init vbswap_init(void)
 {
 	int ret;
 
-	vbswap_major = register_blkdev(0, "zram");
+	vbswap_major = register_blkdev(0, "vbswap");
 	if (vbswap_major <= 0) {
 		pr_err("%s %d: Unable to get major number\n",
 		       __func__, __LINE__);
@@ -352,7 +302,7 @@ static int __init vbswap_init(void)
 	return 0;
 
 free_devices:
-	unregister_blkdev(vbswap_major, "zram");
+	unregister_blkdev(vbswap_major, "vbswap");
 out:
 	return ret;
 }
