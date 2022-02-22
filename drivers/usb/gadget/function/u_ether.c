@@ -311,7 +311,7 @@ static void rx_complete(struct usb_ep *ep, struct usb_request *req)
 			 * use skb buffers.
 			 */
 			if (skb_timestamp_enable)
-				skb->tstamp = ktime_get();
+				skb2->tstamp = ktime_get();
 			status = netif_rx(skb2);
 next_frame:
 			skb2 = skb_dequeue(&dev->rx_frames);
