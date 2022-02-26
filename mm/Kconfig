@@ -877,7 +877,8 @@ config FORCE_ALLOC_FROM_DMA_ZONE
 	  always using ZONE_DMA memory.
 
 	  If unsure, say "n".
-
+	
+# multi-gen LRU {
 config LRU_GEN
         bool "Multi-Gen LRU"
         depends on MMU
@@ -885,6 +886,16 @@ config LRU_GEN
         depends on !MAXSMP && (64BIT || !SPARSEMEM || SPARSEMEM_VMEMMAP)
         help
           A high performance LRU implementation to overcommit memory.
+
+config LRU_GEN_STATS
+	bool "Full stats for debugging"
+	depends on LRU_GEN
+	help
+	  Do not enable this option unless you plan to look at historical stats
+	  from evicted generations for debugging purpose.
+
+	  This option has a per-memcg and per-node memory overhead.
+# }
 
 config OPLUS_MM_HACKS
 	bool "Enable oplus memory management hacks"
