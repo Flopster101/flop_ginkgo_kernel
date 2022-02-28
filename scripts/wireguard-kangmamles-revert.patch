@@ -1,0 +1,28 @@
+From 837bf8a01add129a986fd25e44b2e29af39f7ad2 Mon Sep 17 00:00:00 2001
+From: KangMamles <imzea69@gmail.com>
+Date: Thu, 17 Jun 2021 16:42:36 +0000
+Subject: [PATCH] Partially revert "ratelimiter: totalram_pages is now a
+ function"
+
+This partially reverts commit f63abcd5d7a8c88dc02af87297acc879f6845bd9.
+
+Signed-off-by: KangMamles <imzea69@gmail.com>
+---
+ net/wireguard/compat/compat.h | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/net/wireguard/compat/compat.h b/net/wireguard/compat/compat.h
+index 91d4388824ea..6e703bda71f3 100644
+--- a/net/wireguard/compat/compat.h
++++ b/net/wireguard/compat/compat.h
+@@ -757,10 +757,6 @@ static inline void crypto_xor_cpy(u8 *dst, const u8 *src1, const u8 *src2,
+ #define hlist_add_behind(a, b) hlist_add_after(b, a)
+ #endif
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0) && !defined(ISRHEL8)
+-#define totalram_pages() totalram_pages
+-#endif
+-
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+ struct __kernel_timespec {
+ 	int64_t tv_sec, tv_nsec;
