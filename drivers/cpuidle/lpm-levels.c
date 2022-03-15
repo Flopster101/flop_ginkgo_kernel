@@ -36,7 +36,6 @@
 #include <linux/cpu_pm.h>
 #include <linux/cpuhotplug.h>
 #include <linux/sched/clock.h>
-#include <linux/sched/stat.h>
 #include <soc/qcom/pm.h>
 #include <soc/qcom/event_timer.h>
 #include <soc/qcom/lpm_levels.h>
@@ -57,20 +56,15 @@
 #define SCLK_HZ (32768)
 #define PSCI_POWER_STATE(reset) (reset << 30)
 #define PSCI_AFFINITY_LEVEL(lvl) ((lvl & 0x3) << 24)
-#define BIAS_HYST (bias_hyst * NSEC_PER_MSEC)
 
 static struct system_pm_ops *sys_pm_ops;
 
 
 struct lpm_cluster *lpm_root_node;
 
-static uint32_t bias_hyst;
-module_param_named(bias_hyst, bias_hyst, uint, 0664);
-
 static DEFINE_PER_CPU(struct lpm_cpu*, cpu_lpm);
 static bool suspend_in_progress;
 static struct hrtimer lpm_hrtimer;
-static DEFINE_PER_CPU(struct hrtimer, biastimer);
 
 static void cluster_unprepare(struct lpm_cluster *cluster,
 		const struct cpumask *cpu, int child_idx, bool from_idle,
@@ -273,52 +267,6 @@ static void msm_pm_set_timer(uint32_t modified_time_us)
 	hrtimer_start(&lpm_hrtimer, modified_ktime, HRTIMER_MODE_REL_PINNED);
 }
 
-static void biastimer_cancel(void)
-{
-	unsigned int cpu = raw_smp_processor_id();
-	struct hrtimer *cpu_biastimer = &per_cpu(biastimer, cpu);
-	ktime_t time_rem;
-
-	time_rem = hrtimer_get_remaining(cpu_biastimer);
-	if (ktime_to_us(time_rem) <= 0)
-		return;
-
-	hrtimer_try_to_cancel(cpu_biastimer);
-}
-
-static enum hrtimer_restart biastimer_fn(struct hrtimer *h)
-{
-	return HRTIMER_NORESTART;
-}
-
-static void biastimer_start(uint32_t time_ns)
-{
-	ktime_t bias_ktime = ns_to_ktime(time_ns);
-	unsigned int cpu = raw_smp_processor_id();
-	struct hrtimer *cpu_biastimer = &per_cpu(biastimer, cpu);
-
-	cpu_biastimer->function = biastimer_fn;
-	hrtimer_start(cpu_biastimer, bias_ktime, HRTIMER_MODE_REL_PINNED);
-}
-
-static inline bool is_cpu_biased(int cpu, uint64_t *bias_time)
-{
-	u64 now = sched_clock();
-	u64 last = sched_get_cpu_last_busy_time(cpu);
-	u64 diff = 0;
-
-	if (!last)
-		return false;
-
-	diff = now - last;
-	if (diff < BIAS_HYST) {
-		*bias_time = BIAS_HYST - diff;
-		return true;
-	}
-
-	return false;
-}
-
 static int cpu_power_select(struct cpuidle_device *dev,
 		struct lpm_cpu *cpu)
 {
@@ -334,7 +282,6 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	uint32_t next_wakeup_us = (uint32_t)sleep_us;
 	uint32_t max_residency;
 	struct power_params *pwr_params;
-	uint64_t bias_time = 0;
 
 	if ((sleep_disabled && !cpu_isolated(dev->cpu)) || sleep_us < 0)
 		return best_level;
@@ -342,11 +289,6 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	idx_restrict = cpu->nlevels + 1;
 
 	next_event_us = (uint32_t)(ktime_to_us(get_next_event_time(dev->cpu)));
-
-	if (is_cpu_biased(dev->cpu, &bias_time) && (!cpu_isolated(dev->cpu))) {
-		cpu->bias = bias_time;
-		goto done_select;
-	}
 
 	for (i = 0; i < cpu->nlevels; i++) {
 		bool allow;
@@ -389,7 +331,6 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	if (modified_time_us)
 		msm_pm_set_timer(modified_time_us);
 
-done_select:
 	trace_cpu_power_select(best_level, sleep_us, latency_us, next_event_us);
 
 	return best_level;
@@ -742,8 +683,6 @@ static bool psci_enter_sleep(struct lpm_cpu *cpu, int idx, bool from_idle)
 	 */
 
 	if (!idx) {
-		if (cpu->bias)
-			biastimer_start(cpu->bias);
 		stop_critical_timings();
 		cpu_do_idle();
 		start_critical_timings();
@@ -813,10 +752,6 @@ exit:
 	cpu_unprepare(cpu, idx, true);
 	dev->last_residency = ktime_us_delta(ktime_get(), start);
 	trace_cpu_idle_exit(idx, success);
-	if (cpu->bias) {
-		biastimer_cancel();
-		cpu->bias = 0;
-	}
 	local_irq_enable();
 	return idx;
 }
@@ -1093,8 +1028,6 @@ static const struct platform_s2idle_ops lpm_s2idle_ops = {
 static int lpm_probe(struct platform_device *pdev)
 {
 	int ret;
-	unsigned int cpu;
-	struct hrtimer *cpu_histtimer;
 	struct kobject *module_kobj = NULL;
 
 	get_online_cpus();
@@ -1118,10 +1051,6 @@ static int lpm_probe(struct platform_device *pdev)
 	suspend_set_ops(&lpm_suspend_ops);
 	s2idle_set_ops(&lpm_s2idle_ops);
 	hrtimer_init(&lpm_hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	for_each_possible_cpu(cpu) {
-		cpu_histtimer = &per_cpu(biastimer, cpu);
-		hrtimer_init(cpu_histtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	}
 
 	register_cluster_lpm_stats(lpm_root_node, NULL);
 
