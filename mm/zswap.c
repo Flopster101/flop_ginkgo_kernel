@@ -445,7 +445,7 @@ static struct zswap_pool *zswap_pool_create(char *type, char *compressor)
 {
 	struct zswap_pool *pool;
 	char name[38]; /* 'zswap' + 32 char (max) num + \0 */
-	gfp_t gfp = __GFP_NORETRY | __GFP_NOWARN | __GFP_KSWAPD_RECLAIM | __GFP_HIGHMEM | __GFP_MOVABLE | __GFP_CMA;
+	gfp_t gfp = __GFP_NORETRY | __GFP_NOWARN | __GFP_KSWAPD_RECLAIM | __GFP_CMA;
 	int ret;
 
 	if (!zswap_has_pool) {
@@ -776,7 +776,6 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 	unsigned long handle, value;
 	char *buf;
 	u8 *src, *dst;
-	gfp_t gfp = __GFP_NORETRY | __GFP_NOWARN | __GFP_KSWAPD_RECLAIM | __GFP_HIGHMEM | __GFP_MOVABLE | __GFP_CMA;
 
 	/* THP isn't supported */
 	if (PageTransHuge(page)) {
@@ -833,7 +832,8 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 	if (dlen > PAGE_SIZE)
 		dlen = PAGE_SIZE;
 	ret = zpool_malloc(entry->pool->zpool, dlen,
-			   gfp, &handle);
+			   __GFP_NORETRY | __GFP_NOWARN | __GFP_KSWAPD_RECLAIM | __GFP_CMA,
+			   &handle);
 	if (ret == -ENOSPC) {
 		zswap_reject_compress_poor++;
 		goto put_dstmem;
