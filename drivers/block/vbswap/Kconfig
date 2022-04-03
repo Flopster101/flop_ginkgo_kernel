@@ -3,12 +3,6 @@ config VBSWAP
 	depends on BLOCK && ZSWAP
 	default n
 
-config VBSWAP_DISKSIZE
-	int "vbswap disksize in gigabytes"
-	depends on VBSWAP
-	range 1 8
-	default 2
-
 config VBSWAP_HELPER
 	bool "Initialize and configure VBSWAP disk from kernel"
 	depends on VBSWAP && !STATIC_USERMODEHELPER
