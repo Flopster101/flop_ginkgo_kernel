@@ -939,10 +939,10 @@ static int ovl_fill_super(struct super_block *sb, void *data, int silent)
 		if (ovl_inuse_trylock(upperpath.dentry)) {
 			ufs->upperdir_locked = true;
 		} else if (ufs->config.index) {
-			pr_err("overlayfs: upperdir is in-use by another mount, mount with '-o index=off' to override exclusive upperdir protection.\n");
+			pr_debug_once("overlayfs: upperdir is in-use by another mount, mount with '-o index=off' to override exclusive upperdir protection.\n");
 			goto out_put_upperpath;
 		} else {
-			pr_warn("overlayfs: upperdir is in-use by another mount, accessing files from both mounts will result in undefined behavior.\n");
+			pr_debug_once("overlayfs: upperdir is in-use by another mount, accessing files from both mounts will result in undefined behavior.\n");
 		}
 
 		err = ovl_mount_dir(ufs->config.workdir, &workpath);
@@ -963,10 +963,10 @@ static int ovl_fill_super(struct super_block *sb, void *data, int silent)
 		if (ovl_inuse_trylock(workpath.dentry)) {
 			ufs->workdir_locked = true;
 		} else if (ufs->config.index) {
-			pr_err("overlayfs: workdir is in-use by another mount, mount with '-o index=off' to override exclusive workdir protection.\n");
+			pr_debug_once("overlayfs: workdir is in-use by another mount, mount with '-o index=off' to override exclusive workdir protection.\n");
 			goto out_put_workpath;
 		} else {
-			pr_warn("overlayfs: workdir is in-use by another mount, accessing files from both mounts will result in undefined behavior.\n");
+			pr_debug_once("overlayfs: workdir is in-use by another mount, accessing files from both mounts will result in undefined behavior.\n");
 		}
 
 		ufs->workbasedir = workpath.dentry;
