@@ -497,12 +497,8 @@ static int lpm_cpuidle_select(struct cpuidle_driver *drv,
 static int lpm_cpuidle_enter(struct cpuidle_device *dev,
 		struct cpuidle_driver *drv, int idx)
 {
-	if (need_resched())
-		return idx;
-
-	cpuidle_set_idle_cpu(dev->cpu);
-	wfi();
-	cpuidle_clear_idle_cpu(dev->cpu);
+	if (!need_resched())
+		wfi();
 
 	return idx;
 }
