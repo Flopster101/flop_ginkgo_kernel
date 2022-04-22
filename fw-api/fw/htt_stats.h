@@ -422,6 +422,17 @@ enum htt_dbg_ext_stats_type {
      */
     HTT_DBG_EXT_RX_RING_STATS = 42,
 
+    /* HTT_STRM_GEN_MPDUS_STATS, HTT_STRM_GEN_MPDUS_DETAILS_STATS
+     * PARAMS:
+     *   - No params
+     * RESP MSG: HTT_T2H STREAMING_STATS_IND (not EXT_STATS_CONF)
+     *   - HTT_STRM_GEN_MPDUS_STATS:
+     *     htt_stats_strm_gen_mpdus_tlv_t
+     *   - HTT_STRM_GEN_MPDUS_DETAILS_STATS:
+     *     htt_stats_strm_gen_mpdus_details_tlv_t
+     */
+    HTT_STRM_GEN_MPDUS_STATS = 43,
+    HTT_STRM_GEN_MPDUS_DETAILS_STATS = 44,
 
     /* keep this last */
     HTT_DBG_NUM_EXT_STATS = 256,
@@ -533,6 +544,26 @@ typedef enum {
      */
     HTT_RX_UL_TRIGGER_STATS_UPLOAD_11BE_OFDMA,
 } htt_rx_ul_trigger_stats_upload_t;
+
+/*
+ * The htt_rx_ul_mumimo_trigger_stats_upload_t enum values are
+ * provided by the host as one of the config param elements in
+ * the HTT_H2T EXT_STATS_REQ message, for stats type ==
+ * HTT_DBG_EXT_STATS_PDEV_UL_MUMIMO_TRIG_STATS.
+ */
+typedef enum {
+    /*
+     * Upload 11ax UL MUMIMO RX Trigger stats
+     * TLV: htt_rx_pdev_ul_mumimo_trig_stats_tlv
+     */
+    HTT_RX_UL_MUMIMO_TRIGGER_STATS_UPLOAD_11AX,
+
+    /*
+     * Upload 11be UL MUMIMO RX Trigger stats
+     * TLV: htt_rx_pdev_ul_mumimo_trig_be_stats_tlv
+     */
+    HTT_RX_UL_MUMIMO_TRIGGER_STATS_UPLOAD_11BE,
+} htt_rx_ul_mumimo_trigger_stats_upload_t;
 
 #define HTT_STATS_MAX_STRING_SZ32 4
 #define HTT_STATS_MACID_INVALID 0xff
@@ -4129,6 +4160,40 @@ typedef enum {
 #define HTT_TX_PDEV_STATS_NUM_BE_MCS_COUNTERS 16 /* 0...13,-2,-1 */
 #define HTT_TX_PDEV_STATS_NUM_BE_BW_COUNTERS  5  /* 20,40,80,160,320 MHz */
 
+#define HTT_TX_PDEV_STATS_NUM_HE_SIG_B_MCS_COUNTERS 6
+#define HTT_TX_PDEV_STATS_NUM_EHT_SIG_MCS_COUNTERS 4
+
+typedef enum {
+    HTT_TX_PDEV_STATS_AX_RU_SIZE_26,
+    HTT_TX_PDEV_STATS_AX_RU_SIZE_52,
+    HTT_TX_PDEV_STATS_AX_RU_SIZE_106,
+    HTT_TX_PDEV_STATS_AX_RU_SIZE_242,
+    HTT_TX_PDEV_STATS_AX_RU_SIZE_484,
+    HTT_TX_PDEV_STATS_AX_RU_SIZE_996,
+    HTT_TX_PDEV_STATS_AX_RU_SIZE_996x2,
+    HTT_TX_PDEV_STATS_NUM_AX_RU_SIZE_COUNTERS,
+} HTT_TX_PDEV_STATS_AX_RU_SIZE;
+
+typedef enum {
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_26,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_52,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_52_26,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_106,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_106_26,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_242,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_484,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_484_242,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_996,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_996_484,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_996_484_242,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_996x2,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_996x2_484,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_996x3,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_996x3_484,
+    HTT_TX_PDEV_STATS_BE_RU_SIZE_996x4,
+    HTT_TX_PDEV_STATS_NUM_BE_RU_SIZE_COUNTERS,
+} HTT_TX_PDEV_STATS_BE_RU_SIZE;
+
 typedef struct {
     htt_tlv_hdr_t tlv_hdr;
 
@@ -4251,6 +4316,10 @@ typedef struct {
     A_UINT32 reduced_ax_mu_mimo_tx_bw[HTT_TX_PDEV_STATS_NUM_REDUCED_CHAN_TYPES][HTT_TX_PDEV_STATS_NUM_BW_COUNTERS];
     /** 11AX HE DL MU OFDMA TX BW stats at reduced channel config */
     A_UINT32 reduced_ax_mu_ofdma_tx_bw[HTT_TX_PDEV_STATS_NUM_REDUCED_CHAN_TYPES][HTT_TX_PDEV_STATS_NUM_BW_COUNTERS];
+    /** 11AX HE DL MU OFDMA TX RU Size stats */
+    A_UINT32 ofdma_tx_ru_size[HTT_TX_PDEV_STATS_NUM_AX_RU_SIZE_COUNTERS];
+    /** 11AX HE DL MU OFDMA HE-SIG-B MCS stats */
+    A_UINT32 ofdma_he_sig_b_mcs[HTT_TX_PDEV_STATS_NUM_HE_SIG_B_MCS_COUNTERS];
 } htt_tx_pdev_rate_stats_tlv;
 
 typedef struct {
@@ -4329,6 +4398,10 @@ typedef struct {
     A_UINT32 be_ofdma_tx_bw[HTT_TX_PDEV_STATS_NUM_BE_BW_COUNTERS];
     /** 11BE EHT DL MU OFDMA TX guard interval stats */
     A_UINT32 be_ofdma_tx_gi[HTT_TX_PDEV_STATS_NUM_GI_COUNTERS][HTT_TX_PDEV_STATS_NUM_BE_MCS_COUNTERS];
+    /** 11BE EHT DL MU OFDMA TX RU Size stats */
+    A_UINT32 be_ofdma_tx_ru_size[HTT_TX_PDEV_STATS_NUM_BE_RU_SIZE_COUNTERS];
+    /** 11BE EHT DL MU OFDMA EHT-SIG MCS stats */
+    A_UINT32 be_ofdma_eht_sig_mcs[HTT_TX_PDEV_STATS_NUM_EHT_SIG_MCS_COUNTERS];
 } htt_tx_pdev_rate_stats_be_ofdma_tlv;
 
 /* STATS_TYPE : HTT_DBG_EXT_STATS_PDEV_TX_RATE
@@ -5640,26 +5713,49 @@ typedef struct {
     A_UINT32 cv_dma_not_done_err;
     A_UINT32 cv_update_failed;
     /* cv query stats */
+    /** total times CV query happened */
     A_UINT32 cv_total_query;
+    /** total pattern based CV query */
     A_UINT32 cv_total_pattern_query;
+    /** total BW based CV query */
     A_UINT32 cv_total_bw_query;
+    /** incorrect encoding in CV flags */
     A_UINT32 cv_invalid_bw_coding;
+    /** forced sounding enabled for the peer */
     A_UINT32 cv_forced_sounding;
+    /** standalone sounding sequence on-going */
     A_UINT32 cv_standalone_sounding;
+    /** NC of available CV lower than expected */
     A_UINT32 cv_nc_mismatch;
+    /** feedback type different from expected */
     A_UINT32 cv_fb_type_mismatch;
+    /** CV BW not equal to expected BW for OFDMA */
     A_UINT32 cv_ofdma_bw_mismatch;
+    /** CV BW not greater than or equal to expected BW */
     A_UINT32 cv_bw_mismatch;
+    /** CV pattern not matching with the expected pattern */
     A_UINT32 cv_pattern_mismatch;
+    /** CV available is of different preamble type than expected. */
     A_UINT32 cv_preamble_mismatch;
+    /** NR of available CV is lower than expected. */
     A_UINT32 cv_nr_mismatch;
+    /** CV in use count has exceeded threshold and cannot be used further. */
     A_UINT32 cv_in_use_cnt_exceeded;
+    /** A valid CV has been found. */
     A_UINT32 cv_found;
+    /** No valid CV was found. */
     A_UINT32 cv_not_found;
     /** Sounding per user in 320MHz bandwidth */
     A_UINT32 sounding_320[HTT_TX_PDEV_STATS_NUM_BE_MUMIMO_USER_STATS];
     /** Counts number of soundings for all steering modes in 320MHz bandwidth */
     A_UINT32 cbf_320[HTT_TXBF_MAX_NUM_OF_MODES];
+    /* This part can be used for new counters added for CV query/upload. */
+    /** non-trigger based ranging sequence on-going */
+    A_UINT32 cv_ntbr_sounding;
+    /** CV found, but upload is in progress. */
+    A_UINT32 cv_found_upload_in_progress;
+    /** Expired CV found during query. */
+    A_UINT32 cv_expired_during_query;
 } htt_tx_sounding_stats_tlv;
 
 /* STATS_TYPE : HTT_DBG_EXT_STATS_TX_SOUNDING_INFO
@@ -6093,6 +6189,9 @@ typedef struct {
     htt_tx_rate_stats_t per_nss[HTT_TX_PDEV_STATS_NUM_SPATIAL_STREAMS];
 
     htt_tx_rate_stats_t per_mcs[HTT_TX_TXBF_RATE_STATS_NUM_MCS_COUNTERS];
+
+    /** 320MHz extension for PER */
+    htt_tx_rate_stats_t per_bw320;
 
 } htt_tx_rate_stats_per_tlv;
 
@@ -6708,5 +6807,66 @@ typedef struct {
     htt_t2h_soc_txrx_stats_common_tlv soc_common_stats;
     htt_t2h_vdev_txrx_stats_hw_stats_tlv vdev_hw_stats[1/*or more*/];
 } htt_vdevs_txrx_stats_t;
+
+typedef struct {
+    A_UINT32
+        success: 16,
+        fail:    16;
+} htt_stats_strm_gen_mpdus_cntr_t;
+
+typedef struct {
+    /* MSDU queue identification */
+    A_UINT32
+        peer_id:  16,
+        tid:       4, /* only TIDs 0-7 actually expected to be used */
+        htt_qtype: 4, /* refer to HTT_MSDUQ_INDEX */
+        reserved:  8;
+} htt_stats_strm_msdu_queue_id;
+
+typedef struct {
+    htt_tlv_hdr_t tlv_hdr;
+    htt_stats_strm_msdu_queue_id queue_id;
+    htt_stats_strm_gen_mpdus_cntr_t svc_interval;
+    htt_stats_strm_gen_mpdus_cntr_t burst_size;
+} htt_stats_strm_gen_mpdus_tlv_t;
+
+typedef struct {
+    htt_tlv_hdr_t tlv_hdr;
+    htt_stats_strm_msdu_queue_id queue_id;
+    struct {
+        A_UINT32
+            timestamp_prior_ms: 16,
+            timestamp_now_ms:   16;
+        A_UINT32
+            interval_spec_ms: 16,
+            margin_ms:        16;
+    } svc_interval;
+    struct {
+        A_UINT32
+            /* consumed_bytes_orig:
+             * Raw count (actually estimate) of how many bytes were removed
+             * from the MSDU queue by the GEN_MPDUS operation.
+             */
+            consumed_bytes_orig:  16,
+            /* consumed_bytes_final:
+             * Adjusted count of removed bytes that incorporates normalizing
+             * by the actual service interval compared to the expected
+             * service interval.
+             * This allows the burst size computation to be independent of
+             * whether the target is doing GEN_MPDUS at only the service
+             * interval, or substantially more often than the service
+             * interval.
+             *     consumed_bytes_final = consumed_bytes_orig /
+             *         (svc_interval / ref_svc_interval)
+             */
+            consumed_bytes_final: 16;
+        A_UINT32
+            remaining_bytes: 16,
+            reserved:        16;
+        A_UINT32
+            burst_size_spec: 16,
+            margin_bytes:    16;
+    } burst_size;
+} htt_stats_strm_gen_mpdus_details_tlv_t;
 
 #endif /* __HTT_STATS_H__ */
