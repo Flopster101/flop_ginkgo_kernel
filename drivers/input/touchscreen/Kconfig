@@ -1278,6 +1278,20 @@ config TOUCHSCREEN_SYNAPTICS_DSX
 
 source "drivers/input/touchscreen/synaptics_dsx/Kconfig"
 
+config TOUCHSCREEN_FTS
+	bool "Focaltech Touchscreen Driver"
+	depends on I2C
+	help
+	  Say Y here if you have a STMicroelectronics Touchscreen.
+	  To compile this driver as a module, choose M here.
+
+	  If unsure, say N.
+
+	  This config is used to enable Focaltech_touch
+	  overall driver function.
+
+source "drivers/input/touchscreen/focaltech_touch/Kconfig"
+
 config TOUCHSCREEN_SYNAPTICS_TCM
 	bool "Synaptics TCM Touchscreen Driver"
 	depends on I2C
