@@ -634,3 +634,43 @@
 		panel = <&dsi_ili9881c_720p_video>;
 	};
 };
+
+&usb1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&usb1_vbus_on>;
+	dwc3@a800000 {
+		dr_mode = "host";
+	};
+};
+
+&L14A {
+	regulator-always-on;
+};
+
+&qusb_phy0 {
+	reg = <0x88e2000 0x180>,
+		<0x007801f8 0x4>,
+		<0x01fcb3e4 0x4>;
+	reg-names = "qusb_phy_base",
+		"tune2_efuse_addr",
+		"tcsr_conn_box_spare_0";
+};
+
+&tlmm {
+	usb1_vbus_cntl {
+		usb1_vbus_on: usb1_vbus_on {
+			mux {
+				pins = "gpio54";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio54";
+				drive-strength = <2>;   /* 2 mA */
+				bias-disable;
+				output-high;
+			};
+		};
+	};
+};
