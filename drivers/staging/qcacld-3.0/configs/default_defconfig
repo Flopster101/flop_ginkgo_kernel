@@ -1063,3 +1063,6 @@ CONFIG_FEATURE_GPIO_CFG := y
 
 #Enable VDEV Response wakelock feature
 CONFIG_FEATURE_VDEV_RSP_WAKELOCK := y
+
+#Enable size optimize from genoa.pci.perf_defconfig
+CONFIG_ENABLE_SIZE_OPTIMIZE := y
