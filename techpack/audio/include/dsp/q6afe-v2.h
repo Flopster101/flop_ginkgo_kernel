@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -506,4 +507,14 @@ int afe_get_spk_v_vali_flag(void);
 void afe_get_spk_v_vali_sts(int *spk_v_vali_sts);
 void afe_set_spk_initial_cal(int initial_cal);
 void afe_set_spk_v_vali_flag(int v_vali_flag);
+#ifdef CONFIG_SND_SOC_MAX98937
+int afe_dsm_set_calib(uint8_t* payload);
+int afe_dsm_ramp_dn_cfg(uint8_t *payload, uint32_t delay_in_ms);
+int afe_dsm_set_status(uint8_t* payload);
+int afe_dsm_rx_get_params(uint8_t *payload, int size);
+int afe_dsm_rx_set_params(uint8_t *payload, int size);
+int afe_dsm_pre_calib(uint8_t* payload);
+int afe_dsm_get_calib(uint8_t* payload);
+int afe_dsm_post_calib(uint8_t* payload);
+#endif
 #endif /* __Q6AFE_V2_H__ */
