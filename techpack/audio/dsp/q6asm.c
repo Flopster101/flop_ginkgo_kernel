@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Author: Brian Swetland <swetland@google.com>
  *
  * This software is licensed under the terms of the GNU General Public
@@ -41,6 +42,7 @@
 #include <dsp/q6common.h>
 #include <dsp/q6core.h>
 #include "adsp_err.h"
+#include <soc/qcom/subsystem_restart.h>
 
 #define TIMEOUT_MS  1000
 #define TRUE        0x01
@@ -3179,6 +3181,10 @@ static int __q6asm_open_read(struct audio_client *ac,
 		pr_err("%s: DSP returned error[%s]\n",
 				__func__, adsp_err_get_err_str(
 				atomic_read(&ac->cmd_state)));
+		if(atomic_read(&ac->cmd_state) == ADSP_ENEEDMORE) {
+		    pr_err("%s: subsystem adsp restart\n", __func__);
+		    subsystem_restart("adsp");
+		}
 		rc = adsp_err_get_lnx_err_code(
 				atomic_read(&ac->cmd_state));
 		goto fail_cmd;
