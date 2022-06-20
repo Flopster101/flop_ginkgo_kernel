@@ -2,6 +2,7 @@
  * Functions for working with the Flattened Device Tree data format
  *
  * Copyright 2009 Benjamin Herrenschmidt, IBM Corp
+ * Copyright (C) 2021 XiaoMi, Inc.
  * benh@kernel.crashing.org
  *
  * This program is free software; you can redistribute it and/or
@@ -996,6 +997,7 @@ const void * __init of_flat_dt_match_machine(const void *default_match,
 
 	return best_data;
 }
+
 
 #ifdef CONFIG_BLK_DEV_INITRD
 #ifndef __early_init_dt_declare_initrd
