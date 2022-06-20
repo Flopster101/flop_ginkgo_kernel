@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -11,6 +12,10 @@
  * GNU General Public License for more details.
  */
 
+/* Add by dyz for wcd9370 debug 20190101*/
+#define LOG_NDEBUG 0
+#define VERY_VERY_VERBOSE_LOGGING
+/* Add end */
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/platform_device.h>
@@ -127,7 +132,7 @@ static int wcd937x_init_reg(struct snd_soc_codec *codec)
 	snd_soc_update_bits(codec, WCD937X_ANA_BIAS, 0x40, 0x40);
 	usleep_range(10000, 10010);
 	snd_soc_update_bits(codec, WCD937X_ANA_BIAS, 0x40, 0x00);
-	snd_soc_update_bits(codec, WCD937X_HPH_OCP_CTL, 0xFF, 0x3A);
+	snd_soc_update_bits(codec, WCD937X_HPH_OCP_CTL, 0xFF, 0x7A);
 	snd_soc_update_bits(codec, WCD937X_RX_OCP_CTL, 0x0F, 0x02);
 	snd_soc_update_bits(codec, WCD937X_HPH_SURGE_HPHLR_SURGE_EN, 0xFF,
 			    0xD9);
@@ -1505,6 +1510,9 @@ static int __wcd937x_codec_enable_micbias(struct snd_soc_dapm_widget *w,
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		wcd937x_micbias_control(codec, micb_num, MICB_ENABLE, true);
+		usleep_range(10000, 11000); //add 10ms delay
+		dev_dbg(codec->dev, "%s: wname: %s, event: %d add 10ms delay\n",
+			__func__, w->name, event);
 		break;
 	case SND_SOC_DAPM_POST_PMU:
 		usleep_range(1000, 1100);
@@ -2259,6 +2267,7 @@ static int wcd937x_soc_codec_probe(struct snd_soc_codec *codec)
 
 	wcd937x->codec = codec;
 	variant = (snd_soc_read(codec, WCD937X_DIGITAL_EFUSE_REG_0) & 0x1E) >> 1;
+	pr_err("%s: lct wcd_id variant=%d\n", __func__, variant);
 	wcd937x->variant = variant;
 
 	wcd937x->fw_data = devm_kzalloc(codec->dev,
