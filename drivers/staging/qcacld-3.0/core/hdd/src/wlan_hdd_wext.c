@@ -7906,16 +7906,16 @@ static int __iw_set_var_ints_getnone(struct net_device *dev,
 
 		hdd_info("<iwpriv wlan0 pm_cinfo> is called");
 		conn_info = policy_mgr_get_conn_info(&len);
-		pr_info("+--------------------------+\n");
+		pr_debug("+--------------------------+\n");
 		for (i = 0; i < len; i++) {
-			pr_info("|table_index[%d]\t\t\n", i);
-			pr_info("|\t|vdev_id - %-10d|\n", conn_info->vdev_id);
-			pr_info("|\t|freq    - %-10d|\n", conn_info->freq);
-			pr_info("|\t|bw      - %-10d|\n", conn_info->bw);
-			pr_info("|\t|mode    - %-10d|\n", conn_info->mode);
-			pr_info("|\t|mac     - %-10d|\n", conn_info->mac);
-			pr_info("|\t|in_use  - %-10d|\n", conn_info->in_use);
-			pr_info("+--------------------------+\n");
+			pr_debug("|table_index[%d]\t\t\n", i);
+			pr_debug("|\t|vdev_id - %-10d|\n", conn_info->vdev_id);
+			pr_debug("|\t|freq    - %-10d|\n", conn_info->freq);
+			pr_debug("|\t|bw      - %-10d|\n", conn_info->bw);
+			pr_debug("|\t|mode    - %-10d|\n", conn_info->mode);
+			pr_debug("|\t|mac     - %-10d|\n", conn_info->mac);
+			pr_debug("|\t|in_use  - %-10d|\n", conn_info->in_use);
+			pr_debug("+--------------------------+\n");
 			conn_info++;
 		}
 	}
@@ -9626,7 +9626,7 @@ int hdd_crash_inject(struct hdd_adapter *adapter, uint32_t v1, uint32_t v2)
 
 	hdd_debug("WE_SET_FW_CRASH_INJECT: %d %d",
 		  v1, v2);
-	pr_err("SSR is triggered by iwpriv CRASH_INJECT: %d %d\n",
+	pr_debug("SSR is triggered by iwpriv CRASH_INJECT: %d %d\n",
 	       v1, v2);
 	hdd_ctx = WLAN_HDD_GET_CTX(adapter);
 

@@ -3346,7 +3346,7 @@ wlan_hdd_cfg80211_stats_ext2_callback(hdd_handle_t hdd_handle,
 #endif /* End of WLAN_FEATURE_STATS_EXT */
 
 #ifdef LINKSPEED_DEBUG_ENABLED
-#define linkspeed_dbg(format, args...) pr_info(format, ## args)
+#define linkspeed_dbg(format, args...) pr_debug(format, ## args)
 #else
 #define linkspeed_dbg(format, args...)
 #endif /* LINKSPEED_DEBUG_ENABLED */

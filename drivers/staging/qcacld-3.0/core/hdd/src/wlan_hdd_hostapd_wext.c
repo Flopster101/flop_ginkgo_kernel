@@ -277,7 +277,7 @@ static void print_mac_list(struct qdf_mac_addr *macList, uint8_t size)
 
 	for (i = 0; i < size; i++) {
 		macArray = (macList + i)->bytes;
-		pr_info("ACL entry %i - "QDF_MAC_ADDR_FMT"\n",
+		pr_debug("ACL entry %i - "QDF_MAC_ADDR_FMT"\n",
 			i, QDF_MAC_ADDR_REF(macArray));
 	}
 }
@@ -292,22 +292,22 @@ static QDF_STATUS hdd_print_acl(struct hdd_adapter *adapter)
 	sap_ctx = WLAN_HDD_GET_SAP_CTX_PTR(adapter);
 	qdf_mem_zero(&maclist[0], sizeof(maclist));
 	if (QDF_STATUS_SUCCESS == wlansap_get_acl_mode(sap_ctx, &acl_mode)) {
-		pr_info("******** ACL MODE *********\n");
+		pr_debug("******** ACL MODE *********\n");
 		switch (acl_mode) {
 		case eSAP_ACCEPT_UNLESS_DENIED:
-			pr_info("ACL Mode = ACCEPT_UNLESS_DENIED\n");
+			pr_debug("ACL Mode = ACCEPT_UNLESS_DENIED\n");
 			break;
 		case eSAP_DENY_UNLESS_ACCEPTED:
-			pr_info("ACL Mode = DENY_UNLESS_ACCEPTED\n");
+			pr_debug("ACL Mode = DENY_UNLESS_ACCEPTED\n");
 			break;
 		case eSAP_SUPPORT_ACCEPT_AND_DENY:
-			pr_info("ACL Mode = ACCEPT_AND_DENY\n");
+			pr_debug("ACL Mode = ACCEPT_AND_DENY\n");
 			break;
 		case eSAP_ALLOW_ALL:
-			pr_info("ACL Mode = ALLOW_ALL\n");
+			pr_debug("ACL Mode = ALLOW_ALL\n");
 			break;
 		default:
-			pr_info("Invalid SAP ACL Mode = %d\n", acl_mode);
+			pr_debug("Invalid SAP ACL Mode = %d\n", acl_mode);
 			return QDF_STATUS_E_FAILURE;
 		}
 	} else {
@@ -317,7 +317,7 @@ static QDF_STATUS hdd_print_acl(struct hdd_adapter *adapter)
 	if (QDF_STATUS_SUCCESS == wlansap_get_acl_accept_list(sap_ctx,
 							      &maclist[0],
 							      &listnum)) {
-		pr_info("******* WHITE LIST ***********\n");
+		pr_debug("******* WHITE LIST ***********\n");
 		if (listnum <= MAX_ACL_MAC_ADDRESS)
 			print_mac_list(&maclist[0], listnum);
 	} else {
@@ -327,7 +327,7 @@ static QDF_STATUS hdd_print_acl(struct hdd_adapter *adapter)
 	if (QDF_STATUS_SUCCESS == wlansap_get_acl_deny_list(sap_ctx,
 							    &maclist[0],
 							    &listnum)) {
-		pr_info("******* BLACK LIST ***********\n");
+		pr_debug("******* BLACK LIST ***********\n");
 		if (listnum <= MAX_ACL_MAC_ADDRESS)
 			print_mac_list(&maclist[0], listnum);
 	} else {

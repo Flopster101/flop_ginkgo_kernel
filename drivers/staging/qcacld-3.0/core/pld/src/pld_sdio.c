@@ -566,7 +566,7 @@ int pld_sdio_get_fw_files_for_target(struct pld_fw_files *pfw_files,
 		break;
 	default:
 		memcpy(pfw_files, &fw_files_default, sizeof(*pfw_files));
-		pr_err("%s version mismatch 0x%X ",
+		pr_debug("%s version mismatch 0x%X ",
 				__func__, target_version);
 		break;
 	}

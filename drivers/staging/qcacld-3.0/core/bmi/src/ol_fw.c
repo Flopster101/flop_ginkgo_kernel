@@ -1421,7 +1421,7 @@ QDF_STATUS ol_download_firmware(struct ol_context *ol_ctx)
 
 		if (!address) {
 			address = AR6004_REV5_BOARD_DATA_ADDRESS;
-			pr_err("%s: Target address not known! Using 0x%x\n",
+			pr_debug("%s: Target address not known! Using 0x%x\n",
 			       __func__, address);
 		}
 

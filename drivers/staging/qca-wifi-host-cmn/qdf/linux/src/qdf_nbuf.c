@@ -1027,7 +1027,7 @@ __qdf_nbuf_set_rx_cksum(struct sk_buff *skb, qdf_nbuf_rx_cksum_t *cksum)
 		skb->csum = cksum->val;
 		break;
 	default:
-		pr_err("Unknown checksum type\n");
+		pr_debug("Unknown checksum type\n");
 		qdf_assert(0);
 		return QDF_STATUS_E_NOSUPPORT;
 	}

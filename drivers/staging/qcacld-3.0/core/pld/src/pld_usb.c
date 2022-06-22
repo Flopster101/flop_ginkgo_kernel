@@ -69,7 +69,7 @@ static int pld_usb_probe(struct usb_interface *interface,
 	ret = pld_context->ops->probe(&pdev->dev,
 				      PLD_BUS_TYPE_USB, interface, (void *)id);
 	if (ret != 0) {
-		pr_err("%s, probe returned %d", __func__, ret);
+		pr_debug("%s, probe returned %d", __func__, ret);
 		atomic_set(&pld_usb_reg_done, false);
 	} else {
 		atomic_set(&pld_usb_reg_done, true);
@@ -105,7 +105,7 @@ static void pld_usb_remove(struct usb_interface *interface)
 		goto out;
 
 	if (atomic_read(&pld_usb_reg_done) != true) {
-		pr_info("%s: already de-registered!\n", __func__);
+		pr_debug("%s: already de-registered!\n", __func__);
 		goto out;
 	}
 
@@ -118,7 +118,7 @@ out:
 	osif_psoc_sync_trans_stop(psoc_sync);
 	osif_psoc_sync_destroy(psoc_sync);
 
-	pr_info("%s: done!\n", __func__);
+	pr_debug("%s: done!\n", __func__);
 }
 
 /**
@@ -271,7 +271,7 @@ struct cnss_usb_wlan_driver pld_usb_ops = {
  */
 int pld_usb_register_driver(void)
 {
-	pr_info("%s usb_register\n", __func__);
+	pr_debug("%s usb_register\n", __func__);
 	return cnss_usb_wlan_register_driver(&pld_usb_ops);
 }
 
@@ -283,7 +283,7 @@ int pld_usb_register_driver(void)
 void pld_usb_unregister_driver(void)
 {
 	cnss_usb_wlan_unregister_driver(&pld_usb_ops);
-	pr_info("%s usb_deregister done!\n", __func__);
+	pr_debug("%s usb_deregister done!\n", __func__);
 }
 
 int pld_usb_wlan_enable(struct device *dev, struct pld_wlan_enable_cfg *config,
@@ -344,7 +344,7 @@ int pld_usb_register_driver(void)
 		status = -1;
 	}
 
-	pr_info("%s usb_register %s, status %d\n", __func__,
+	pr_debug("%s usb_register %s, status %d\n", __func__,
 		(status == 0) ? "done" : "failed", status);
 
 	return status;
@@ -367,7 +367,7 @@ void pld_usb_unregister_driver(void)
 
 	atomic_set(&pld_usb_reg_done, false);
 	usb_deregister(&pld_usb_ops);
-	pr_info("%s usb_deregister done!\n", __func__);
+	pr_debug("%s usb_deregister done!\n", __func__);
 }
 
 int pld_usb_wlan_enable(struct device *dev, struct pld_wlan_enable_cfg *config,
