@@ -3175,9 +3175,9 @@ void qdf_trace_display(void)
 {
 	QDF_MODULE_ID module_id;
 
-	pr_err("     1)FATAL  2)ERROR  3)WARN  4)INFO  5)INFO_H  6)INFO_M  7)INFO_L 8)DEBUG\n");
+	pr_debug("     1)FATAL  2)ERROR  3)WARN  4)INFO  5)INFO_H  6)INFO_M  7)INFO_L 8)DEBUG\n");
 	for (module_id = 0; module_id < QDF_MODULE_ID_MAX; ++module_id) {
-		pr_err("%2d)%s    %s        %s       %s       %s        %s         %s         %s        %s\n",
+		pr_debug("%2d)%s    %s        %s       %s       %s        %s         %s         %s        %s\n",
 		       (int)module_id,
 		       g_qdf_category_name[module_id].category_name_str,
 		       qdf_print_is_verbose_enabled(qdf_pidx, module_id,
@@ -3203,7 +3203,7 @@ qdf_export_symbol(qdf_trace_display);
 #ifdef QDF_TRACE_PRINT_ENABLE
 static inline void print_to_console(char *str_buffer)
 {
-	pr_err("%s\n", str_buffer);
+	pr_debug("%s\n", str_buffer);
 }
 #else
 
@@ -3232,25 +3232,25 @@ void qdf_trace_msg_cmn(unsigned int idx,
 
 	/* Check if index passed is valid */
 	if (idx < 0 || idx >= MAX_PRINT_CONFIG_SUPPORTED) {
-		pr_info("%s: Invalid index - %d\n", __func__, idx);
+		pr_debug("%s: Invalid index - %d\n", __func__, idx);
 		return;
 	}
 
 	/* Check if print control object is in use */
 	if (!print_ctrl_obj[idx].in_use) {
-		pr_info("%s: Invalid print control object\n", __func__);
+		pr_debug("%s: Invalid print control object\n", __func__);
 		return;
 	}
 
 	/* Check if category passed is valid */
 	if (category < 0 || category >= MAX_SUPPORTED_CATEGORY) {
-		pr_info("%s: Invalid category: %d\n", __func__, category);
+		pr_debug("%s: Invalid category: %d\n", __func__, category);
 		return;
 	}
 
 	/* Check if verbose mask is valid */
 	if (verbose < 0 || verbose >= QDF_TRACE_LEVEL_MAX) {
-		pr_info("%s: Invalid verbose level %d\n", __func__, verbose);
+		pr_debug("%s: Invalid verbose level %d\n", __func__, verbose);
 		return;
 	}
 
@@ -3289,7 +3289,7 @@ void qdf_trace_msg_cmn(unsigned int idx,
 		if (qdf_likely(qdf_log_dump_at_kernel_enable))
 			print_to_console(str_buffer);
 #else
-		pr_err("%s\n", str_buffer);
+		pr_debug("%s\n", str_buffer);
 #endif
 	}
 }
@@ -3313,7 +3313,7 @@ QDF_STATUS qdf_print_ctrl_cleanup(unsigned int idx)
 	int i = 0;
 
 	if (idx < 0 || idx >= MAX_PRINT_CONFIG_SUPPORTED) {
-		pr_info("%s: Invalid index - %d\n", __func__, idx);
+		pr_debug("%s: Invalid index - %d\n", __func__, idx);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -3351,7 +3351,7 @@ int qdf_print_ctrl_register(const struct category_info *cinfo,
 
 	/* Callee to handle idx -1 appropriately */
 	if (idx == -1) {
-		pr_info("%s: Allocation failed! No print control object free\n",
+		pr_debug("%s: Allocation failed! No print control object free\n",
 			__func__);
 		return idx;
 	}
@@ -3471,32 +3471,32 @@ static void process_qdf_dbg_arr_param(struct category_info *cinfo,
 	mod_str = strsep(&mod_val_str, "=");
 	val_str = mod_val_str;
 	if (!val_str) {
-		pr_info("qdf_dbg_arr: %s not in the <mod>=<val> form\n",
+		pr_debug("qdf_dbg_arr: %s not in the <mod>=<val> form\n",
 				mod_str);
 		return;
 	}
 
 	mod_id = find_qdf_module_from_string(mod_str);
 	if (mod_id >= QDF_MODULE_ID_MAX) {
-		pr_info("ERROR!!Module name %s not in the list of modules\n",
+		pr_debug("ERROR!!Module name %s not in the list of modules\n",
 				mod_str);
 		return;
 	}
 
 	if (kstrtol(val_str, 10, &dbg_level) < 0) {
-		pr_info("ERROR!!Invalid debug level for module: %s\n",
+		pr_debug("ERROR!!Invalid debug level for module: %s\n",
 				mod_str);
 		return;
 	}
 
 	if (dbg_level >= QDF_TRACE_LEVEL_MAX) {
-		pr_info("ERROR!!Debug level for %s too high", mod_str);
-		pr_info("max: %d given %lu\n", QDF_TRACE_LEVEL_MAX,
+		pr_debug("ERROR!!Debug level for %s too high", mod_str);
+		pr_debug("max: %d given %lu\n", QDF_TRACE_LEVEL_MAX,
 				dbg_level);
 		return;
 	}
 
-	pr_info("User passed setting module %s(%d) to level %lu\n",
+	pr_debug("User passed setting module %s(%d) to level %lu\n",
 			mod_str,
 			mod_id,
 			dbg_level);
@@ -3644,15 +3644,15 @@ void qdf_shared_print_ctrl_init(void)
 	 * User specified across-module single debug level
 	 */
 	if ((qdf_dbg_mask >= 0) && (qdf_dbg_mask < QDF_TRACE_LEVEL_MAX)) {
-		pr_info("User specified module debug level of %d\n",
+		pr_debug("User specified module debug level of %d\n",
 			qdf_dbg_mask);
 		for (i = 0; i < MAX_SUPPORTED_CATEGORY; i++) {
 			cinfo[i].category_verbose_mask =
 			set_cumulative_verbose_mask(qdf_dbg_mask);
 		}
 	} else if (qdf_dbg_mask != QDF_TRACE_LEVEL_MAX) {
-		pr_info("qdf_dbg_mask value is invalid\n");
-		pr_info("Using the default module debug levels instead\n");
+		pr_debug("qdf_dbg_mask value is invalid\n");
+		pr_debug("Using the default module debug levels instead\n");
 	}
 
 	/*
@@ -3674,25 +3674,25 @@ QDF_STATUS qdf_print_set_category_verbose(unsigned int idx,
 {
 	/* Check if index passed is valid */
 	if (idx < 0 || idx >= MAX_PRINT_CONFIG_SUPPORTED) {
-		pr_err("%s: Invalid index - %d\n", __func__, idx);
+		pr_debug("%s: Invalid index - %d\n", __func__, idx);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	/* Check if print control object is in use */
 	if (!print_ctrl_obj[idx].in_use) {
-		pr_err("%s: Invalid print control object\n", __func__);
+		pr_debug("%s: Invalid print control object\n", __func__);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	/* Check if category passed is valid */
 	if (category < 0 || category >= MAX_SUPPORTED_CATEGORY) {
-		pr_err("%s: Invalid category: %d\n", __func__, category);
+		pr_debug("%s: Invalid category: %d\n", __func__, category);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	/* Check if verbose mask is valid */
 	if (verbose < 0 || verbose >= QDF_TRACE_LEVEL_MAX) {
-		pr_err("%s: Invalid verbose level %d\n", __func__, verbose);
+		pr_debug("%s: Invalid verbose level %d\n", __func__, verbose);
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -3748,19 +3748,19 @@ bool qdf_print_is_category_enabled(unsigned int idx, QDF_MODULE_ID category)
 
 	/* Check if index passed is valid */
 	if (idx < 0 || idx >= MAX_PRINT_CONFIG_SUPPORTED) {
-		pr_info("%s: Invalid index - %d\n", __func__, idx);
+		pr_debug("%s: Invalid index - %d\n", __func__, idx);
 		return false;
 	}
 
 	/* Check if print control object is in use */
 	if (!print_ctrl_obj[idx].in_use) {
-		pr_info("%s: Invalid print control object\n", __func__);
+		pr_debug("%s: Invalid print control object\n", __func__);
 		return false;
 	}
 
 	/* Check if category passed is valid */
 	if (category < 0 || category >= MAX_SUPPORTED_CATEGORY) {
-		pr_info("%s: Invalid category: %d\n", __func__, category);
+		pr_debug("%s: Invalid category: %d\n", __func__, category);
 		return false;
 	}
 
@@ -3781,19 +3781,19 @@ bool qdf_print_is_verbose_enabled(unsigned int idx, QDF_MODULE_ID category,
 
 	/* Check if index passed is valid */
 	if (idx < 0 || idx >= MAX_PRINT_CONFIG_SUPPORTED) {
-		pr_info("%s: Invalid index - %d\n", __func__, idx);
+		pr_debug("%s: Invalid index - %d\n", __func__, idx);
 		return verbose_enabled;
 	}
 
 	/* Check if print control object is in use */
 	if (!print_ctrl_obj[idx].in_use) {
-		pr_info("%s: Invalid print control object\n", __func__);
+		pr_debug("%s: Invalid print control object\n", __func__);
 		return verbose_enabled;
 	}
 
 	/* Check if category passed is valid */
 	if (category < 0 || category >= MAX_SUPPORTED_CATEGORY) {
-		pr_info("%s: Invalid category: %d\n", __func__, category);
+		pr_debug("%s: Invalid category: %d\n", __func__, category);
 		return verbose_enabled;
 	}
 
@@ -3820,24 +3820,24 @@ QDF_STATUS qdf_print_set_node_flag(unsigned int idx, uint8_t enable)
 {
 	/* Check if index passed is valid */
 	if (idx < 0 || idx >= MAX_PRINT_CONFIG_SUPPORTED) {
-		pr_info("%s: Invalid index - %d\n", __func__, idx);
+		pr_debug("%s: Invalid index - %d\n", __func__, idx);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	/* Check if print control object is in use */
 	if (!print_ctrl_obj[idx].in_use) {
-		pr_info("%s: Invalid print control object\n", __func__);
+		pr_debug("%s: Invalid print control object\n", __func__);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	if (enable > 1) {
-		pr_info("%s: Incorrect input: Use 1 or 0 to enable or disable\n",
+		pr_debug("%s: Incorrect input: Use 1 or 0 to enable or disable\n",
 			__func__);
 		return QDF_STATUS_E_FAILURE;
 	}
 
 	print_ctrl_obj[idx].dbglvlmac_on = enable;
-	pr_info("%s: DbgLVLmac feature %s\n",
+	pr_debug("%s: DbgLVLmac feature %s\n",
 		__func__,
 		((enable) ? "enabled" : "disabled"));
 
@@ -3851,13 +3851,13 @@ bool qdf_print_get_node_flag(unsigned int idx)
 
 	/* Check if index passed is valid */
 	if (idx < 0 || idx >= MAX_PRINT_CONFIG_SUPPORTED) {
-		pr_info("%s: Invalid index - %d\n", __func__, idx);
+		pr_debug("%s: Invalid index - %d\n", __func__, idx);
 		return node_flag;
 	}
 
 	/* Check if print control object is in use */
 	if (!print_ctrl_obj[idx].in_use) {
-		pr_info("%s: Invalid print control object\n", __func__);
+		pr_debug("%s: Invalid print control object\n", __func__);
 		return node_flag;
 	}
 
