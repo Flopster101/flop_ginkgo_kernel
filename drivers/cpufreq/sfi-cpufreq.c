@@ -38,7 +38,7 @@ static int sfi_parse_freq(struct sfi_table_header *table)
 	num_freq_table_entries = SFI_GET_NUM_ENTRIES(sb,
 			struct sfi_freq_table_entry);
 	if (num_freq_table_entries <= 1) {
-		pr_err("No p-states discovered\n");
+		pr_debug("No p-states discovered\n");
 		return -ENODEV;
 	}
 

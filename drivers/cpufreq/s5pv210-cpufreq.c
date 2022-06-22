@@ -207,7 +207,7 @@ static void s5pv210_set_refresh(enum s5pv210_dmc_port ch, unsigned long freq)
 	} else if (ch == DMC1) {
 		reg = (dmc_base[1] + 0x30);
 	} else {
-		pr_err("Cannot find DMC port\n");
+		pr_debug("Cannot find DMC port\n");
 		return;
 	}
 
@@ -236,7 +236,7 @@ static int s5pv210_target(struct cpufreq_policy *policy, unsigned int index)
 	mutex_lock(&set_freq_lock);
 
 	if (no_cpufreq_access) {
-		pr_err("Denied access to %s as it is disabled temporarily\n",
+		pr_debug("Denied access to %s as it is disabled temporarily\n",
 		       __func__);
 		ret = -EINVAL;
 		goto exit;
@@ -531,7 +531,7 @@ static int s5pv210_cpu_init(struct cpufreq_policy *policy)
 	mem_type = check_mem_type(dmc_base[0]);
 
 	if ((mem_type != LPDDR) && (mem_type != LPDDR2)) {
-		pr_err("CPUFreq doesn't support this memory type\n");
+		pr_debug("CPUFreq doesn't support this memory type\n");
 		ret = -EINVAL;
 		goto out_dmc1;
 	}
@@ -596,7 +596,7 @@ static int s5pv210_cpufreq_probe(struct platform_device *pdev)
 	 */
 	np = of_find_compatible_node(NULL, NULL, "samsung,s5pv210-clock");
 	if (!np) {
-		pr_err("%s: failed to find clock controller DT node\n",
+		pr_debug("%s: failed to find clock controller DT node\n",
 			__func__);
 		return -ENODEV;
 	}
@@ -604,14 +604,14 @@ static int s5pv210_cpufreq_probe(struct platform_device *pdev)
 	clk_base = of_iomap(np, 0);
 	of_node_put(np);
 	if (!clk_base) {
-		pr_err("%s: failed to map clock registers\n", __func__);
+		pr_debug("%s: failed to map clock registers\n", __func__);
 		return -EFAULT;
 	}
 
 	for_each_compatible_node(np, NULL, "samsung,s5pv210-dmc") {
 		id = of_alias_get_id(np, "dmc");
 		if (id < 0 || id >= ARRAY_SIZE(dmc_base)) {
-			pr_err("%s: failed to get alias of dmc node '%s'\n",
+			pr_debug("%s: failed to get alias of dmc node '%s'\n",
 				__func__, np->name);
 			of_node_put(np);
 			return id;
@@ -619,7 +619,7 @@ static int s5pv210_cpufreq_probe(struct platform_device *pdev)
 
 		dmc_base[id] = of_iomap(np, 0);
 		if (!dmc_base[id]) {
-			pr_err("%s: failed to map dmc%d registers\n",
+			pr_debug("%s: failed to map dmc%d registers\n",
 				__func__, id);
 			of_node_put(np);
 			return -EFAULT;
@@ -628,20 +628,20 @@ static int s5pv210_cpufreq_probe(struct platform_device *pdev)
 
 	for (id = 0; id < ARRAY_SIZE(dmc_base); ++id) {
 		if (!dmc_base[id]) {
-			pr_err("%s: failed to find dmc%d node\n", __func__, id);
+			pr_debug("%s: failed to find dmc%d node\n", __func__, id);
 			return -ENODEV;
 		}
 	}
 
 	arm_regulator = regulator_get(NULL, "vddarm");
 	if (IS_ERR(arm_regulator)) {
-		pr_err("failed to get regulator vddarm\n");
+		pr_debug("failed to get regulator vddarm\n");
 		return PTR_ERR(arm_regulator);
 	}
 
 	int_regulator = regulator_get(NULL, "vddint");
 	if (IS_ERR(int_regulator)) {
-		pr_err("failed to get regulator vddint\n");
+		pr_debug("failed to get regulator vddint\n");
 		regulator_put(arm_regulator);
 		return PTR_ERR(int_regulator);
 	}

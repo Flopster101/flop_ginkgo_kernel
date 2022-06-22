@@ -126,13 +126,13 @@ static int check_powernow(void)
 	maxei = cpuid_eax(0x80000000);
 	if (maxei < 0x80000007) {	/* Any powernow info ? */
 #ifdef MODULE
-		pr_info("No powernow capabilities detected\n");
+		pr_debug("No powernow capabilities detected\n");
 #endif
 		return 0;
 	}
 
 	if ((c->x86_model == 6) && (c->x86_stepping == 0)) {
-		pr_info("K7 660[A0] core detected, enabling errata workarounds\n");
+		pr_debug("K7 660[A0] core detected, enabling errata workarounds\n");
 		have_a0 = 1;
 	}
 
@@ -142,7 +142,7 @@ static int check_powernow(void)
 	if (!(edx & (1 << 1 | 1 << 2)))
 		return 0;
 
-	pr_info("PowerNOW! Technology present. Can scale: ");
+	pr_debug("PowerNOW! Technology present. Can scale: ");
 
 	if (edx & 1 << 1) {
 		pr_cont("frequency");
@@ -432,7 +432,7 @@ err0:
 #else
 static int powernow_acpi_init(void)
 {
-	pr_info("no support for ACPI processor found - please recompile your kernel with ACPI processor\n");
+	pr_debug("no support for ACPI processor found - please recompile your kernel with ACPI processor\n");
 	return -EINVAL;
 }
 #endif
@@ -464,7 +464,7 @@ static int powernow_decode_bios(int maxfid, int startvid)
 			psb = (struct psb_s *) p;
 			pr_debug("Table version: 0x%x\n", psb->tableversion);
 			if (psb->tableversion != 0x12) {
-				pr_info("Sorry, only v1.2 tables supported right now\n");
+				pr_debug("Sorry, only v1.2 tables supported right now\n");
 				return -ENODEV;
 			}
 
@@ -476,7 +476,7 @@ static int powernow_decode_bios(int maxfid, int startvid)
 
 			latency = psb->settlingtime;
 			if (latency < 100) {
-				pr_info("BIOS set settling time to %d microseconds. Should be at least 100. Correcting.\n",
+				pr_debug("BIOS set settling time to %d microseconds. Should be at least 100. Correcting.\n",
 					latency);
 				latency = 100;
 			}
@@ -509,9 +509,9 @@ static int powernow_decode_bios(int maxfid, int startvid)
 						p += 2;
 				}
 			}
-			pr_info("No PST tables match this cpuid (0x%x)\n",
+			pr_debug("No PST tables match this cpuid (0x%x)\n",
 				etuple);
-			pr_info("This is indicative of a broken BIOS\n");
+			pr_debug("This is indicative of a broken BIOS\n");
 
 			return -EINVAL;
 		}
@@ -610,31 +610,31 @@ static int powernow_cpu_init(struct cpufreq_policy *policy)
 	pr_debug("FSB: %3dMHz\n", fsb/1000);
 
 	if (dmi_check_system(powernow_dmi_table) || acpi_force) {
-		pr_info("PSB/PST known to be broken - trying ACPI instead\n");
+		pr_debug("PSB/PST known to be broken - trying ACPI instead\n");
 		result = powernow_acpi_init();
 	} else {
 		result = powernow_decode_bios(fidvidstatus.bits.MFID,
 				fidvidstatus.bits.SVID);
 		if (result) {
-			pr_info("Trying ACPI perflib\n");
+			pr_debug("Trying ACPI perflib\n");
 			maximum_speed = 0;
 			minimum_speed = -1;
 			latency = 0;
 			result = powernow_acpi_init();
 			if (result) {
-				pr_info("ACPI and legacy methods failed\n");
+				pr_debug("ACPI and legacy methods failed\n");
 			}
 		} else {
 			/* SGTC use the bus clock as timer */
 			latency = fixup_sgtc();
-			pr_info("SGTC: %d\n", latency);
+			pr_debug("SGTC: %d\n", latency);
 		}
 	}
 
 	if (result)
 		return result;
 
-	pr_info("Minimum speed %d MHz - Maximum speed %d MHz\n",
+	pr_debug("Minimum speed %d MHz - Maximum speed %d MHz\n",
 		minimum_speed/1000, maximum_speed/1000);
 
 	policy->cpuinfo.transition_latency =

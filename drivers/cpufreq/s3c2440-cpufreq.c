@@ -275,7 +275,7 @@ static int s3c2440_cpufreq_add(struct device *dev,
 	armclk = s3c_cpufreq_clk_get(NULL, "armclk");
 
 	if (IS_ERR(xtal) || IS_ERR(hclk) || IS_ERR(fclk) || IS_ERR(armclk)) {
-		pr_err("%s: failed to get clocks\n", __func__);
+		pr_debug("%s: failed to get clocks\n", __func__);
 		return -ENOENT;
 	}
 

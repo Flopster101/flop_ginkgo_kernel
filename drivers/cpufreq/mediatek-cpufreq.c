@@ -77,7 +77,7 @@ static int mtk_cpufreq_voltage_tracking(struct mtk_cpu_dvfs_info *info,
 
 	old_vproc = regulator_get_voltage(proc_reg);
 	if (old_vproc < 0) {
-		pr_err("%s: invalid Vproc value: %d\n", __func__, old_vproc);
+		pr_debug("%s: invalid Vproc value: %d\n", __func__, old_vproc);
 		return old_vproc;
 	}
 	/* Vsram should not exceed the maximum allowed voltage of SoC. */
@@ -93,13 +93,13 @@ static int mtk_cpufreq_voltage_tracking(struct mtk_cpu_dvfs_info *info,
 		do {
 			old_vsram = regulator_get_voltage(sram_reg);
 			if (old_vsram < 0) {
-				pr_err("%s: invalid Vsram value: %d\n",
+				pr_debug("%s: invalid Vsram value: %d\n",
 				       __func__, old_vsram);
 				return old_vsram;
 			}
 			old_vproc = regulator_get_voltage(proc_reg);
 			if (old_vproc < 0) {
-				pr_err("%s: invalid Vproc value: %d\n",
+				pr_debug("%s: invalid Vproc value: %d\n",
 				       __func__, old_vproc);
 				return old_vproc;
 			}
@@ -148,13 +148,13 @@ static int mtk_cpufreq_voltage_tracking(struct mtk_cpu_dvfs_info *info,
 		do {
 			old_vproc = regulator_get_voltage(proc_reg);
 			if (old_vproc < 0) {
-				pr_err("%s: invalid Vproc value: %d\n",
+				pr_debug("%s: invalid Vproc value: %d\n",
 				       __func__, old_vproc);
 				return old_vproc;
 			}
 			old_vsram = regulator_get_voltage(sram_reg);
 			if (old_vsram < 0) {
-				pr_err("%s: invalid Vsram value: %d\n",
+				pr_debug("%s: invalid Vsram value: %d\n",
 				       __func__, old_vsram);
 				return old_vsram;
 			}
@@ -226,7 +226,7 @@ static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
 	old_freq_hz = clk_get_rate(cpu_clk);
 	old_vproc = regulator_get_voltage(info->proc_reg);
 	if (old_vproc < 0) {
-		pr_err("%s: invalid Vproc value: %d\n", __func__, old_vproc);
+		pr_debug("%s: invalid Vproc value: %d\n", __func__, old_vproc);
 		return old_vproc;
 	}
 
@@ -234,7 +234,7 @@ static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
 
 	opp = dev_pm_opp_find_freq_ceil(cpu_dev, &freq_hz);
 	if (IS_ERR(opp)) {
-		pr_err("cpu%d: failed to find OPP for %ld\n",
+		pr_debug("cpu%d: failed to find OPP for %ld\n",
 		       policy->cpu, freq_hz);
 		return PTR_ERR(opp);
 	}
@@ -249,7 +249,7 @@ static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
 	if (old_vproc < target_vproc) {
 		ret = mtk_cpufreq_set_voltage(info, target_vproc);
 		if (ret) {
-			pr_err("cpu%d: failed to scale up voltage!\n",
+			pr_debug("cpu%d: failed to scale up voltage!\n",
 			       policy->cpu);
 			mtk_cpufreq_set_voltage(info, old_vproc);
 			return ret;
@@ -259,7 +259,7 @@ static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
 	/* Reparent the CPU clock to intermediate clock. */
 	ret = clk_set_parent(cpu_clk, info->inter_clk);
 	if (ret) {
-		pr_err("cpu%d: failed to re-parent cpu clock!\n",
+		pr_debug("cpu%d: failed to re-parent cpu clock!\n",
 		       policy->cpu);
 		mtk_cpufreq_set_voltage(info, old_vproc);
 		WARN_ON(1);
@@ -269,7 +269,7 @@ static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
 	/* Set the original PLL to target rate. */
 	ret = clk_set_rate(armpll, freq_hz);
 	if (ret) {
-		pr_err("cpu%d: failed to scale cpu clock rate!\n",
+		pr_debug("cpu%d: failed to scale cpu clock rate!\n",
 		       policy->cpu);
 		clk_set_parent(cpu_clk, armpll);
 		mtk_cpufreq_set_voltage(info, old_vproc);
@@ -279,7 +279,7 @@ static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
 	/* Set parent of CPU clock back to the original PLL. */
 	ret = clk_set_parent(cpu_clk, armpll);
 	if (ret) {
-		pr_err("cpu%d: failed to re-parent cpu clock!\n",
+		pr_debug("cpu%d: failed to re-parent cpu clock!\n",
 		       policy->cpu);
 		mtk_cpufreq_set_voltage(info, inter_vproc);
 		WARN_ON(1);
@@ -293,7 +293,7 @@ static int mtk_cpufreq_set_target(struct cpufreq_policy *policy,
 	if (vproc < inter_vproc || vproc < old_vproc) {
 		ret = mtk_cpufreq_set_voltage(info, vproc);
 		if (ret) {
-			pr_err("cpu%d: failed to scale down voltage!\n",
+			pr_debug("cpu%d: failed to scale down voltage!\n",
 			       policy->cpu);
 			clk_set_parent(cpu_clk, info->inter_clk);
 			clk_set_rate(armpll, old_freq_hz);
@@ -347,7 +347,7 @@ static int mtk_cpu_dvfs_info_init(struct mtk_cpu_dvfs_info *info, int cpu)
 
 	cpu_dev = get_cpu_device(cpu);
 	if (!cpu_dev) {
-		pr_err("failed to get cpu%d device\n", cpu);
+		pr_debug("failed to get cpu%d device\n", cpu);
 		return -ENODEV;
 	}
 
@@ -356,7 +356,7 @@ static int mtk_cpu_dvfs_info_init(struct mtk_cpu_dvfs_info *info, int cpu)
 		if (PTR_ERR(cpu_clk) == -EPROBE_DEFER)
 			pr_warn("cpu clk for cpu%d not ready, retry.\n", cpu);
 		else
-			pr_err("failed to get cpu clk for cpu%d\n", cpu);
+			pr_debug("failed to get cpu clk for cpu%d\n", cpu);
 
 		ret = PTR_ERR(cpu_clk);
 		return ret;
@@ -368,7 +368,7 @@ static int mtk_cpu_dvfs_info_init(struct mtk_cpu_dvfs_info *info, int cpu)
 			pr_warn("intermediate clk for cpu%d not ready, retry.\n",
 				cpu);
 		else
-			pr_err("failed to get intermediate clk for cpu%d\n",
+			pr_debug("failed to get intermediate clk for cpu%d\n",
 			       cpu);
 
 		ret = PTR_ERR(inter_clk);
@@ -381,7 +381,7 @@ static int mtk_cpu_dvfs_info_init(struct mtk_cpu_dvfs_info *info, int cpu)
 			pr_warn("proc regulator for cpu%d not ready, retry.\n",
 				cpu);
 		else
-			pr_err("failed to get proc regulator for cpu%d\n",
+			pr_debug("failed to get proc regulator for cpu%d\n",
 			       cpu);
 
 		ret = PTR_ERR(proc_reg);
@@ -394,7 +394,7 @@ static int mtk_cpu_dvfs_info_init(struct mtk_cpu_dvfs_info *info, int cpu)
 	/* Get OPP-sharing information from "operating-points-v2" bindings */
 	ret = dev_pm_opp_of_get_sharing_cpus(cpu_dev, &info->cpus);
 	if (ret) {
-		pr_err("failed to get OPP-sharing information for cpu%d\n",
+		pr_debug("failed to get OPP-sharing information for cpu%d\n",
 		       cpu);
 		goto out_free_resources;
 	}
@@ -409,7 +409,7 @@ static int mtk_cpu_dvfs_info_init(struct mtk_cpu_dvfs_info *info, int cpu)
 	rate = clk_get_rate(inter_clk);
 	opp = dev_pm_opp_find_freq_ceil(cpu_dev, &rate);
 	if (IS_ERR(opp)) {
-		pr_err("failed to get intermediate opp for cpu%d\n", cpu);
+		pr_debug("failed to get intermediate opp for cpu%d\n", cpu);
 		ret = PTR_ERR(opp);
 		goto out_free_opp_table;
 	}
@@ -468,21 +468,21 @@ static int mtk_cpufreq_init(struct cpufreq_policy *policy)
 
 	info = mtk_cpu_dvfs_info_lookup(policy->cpu);
 	if (!info) {
-		pr_err("dvfs info for cpu%d is not initialized.\n",
+		pr_debug("dvfs info for cpu%d is not initialized.\n",
 		       policy->cpu);
 		return -EINVAL;
 	}
 
 	ret = dev_pm_opp_init_cpufreq_table(info->cpu_dev, &freq_table);
 	if (ret) {
-		pr_err("failed to init cpufreq table for cpu%d: %d\n",
+		pr_debug("failed to init cpufreq table for cpu%d: %d\n",
 		       policy->cpu, ret);
 		return ret;
 	}
 
 	ret = cpufreq_table_validate_and_show(policy, freq_table);
 	if (ret) {
-		pr_err("%s: invalid frequency table: %d\n", __func__, ret);
+		pr_debug("%s: invalid frequency table: %d\n", __func__, ret);
 		goto out_free_cpufreq_table;
 	}
 
@@ -614,7 +614,7 @@ static int __init mtk_cpufreq_driver_init(void)
 	 */
 	pdev = platform_device_register_simple("mtk-cpufreq", -1, NULL, 0);
 	if (IS_ERR(pdev)) {
-		pr_err("failed to register mtk-cpufreq platform device\n");
+		pr_debug("failed to register mtk-cpufreq platform device\n");
 		return PTR_ERR(pdev);
 	}
 

@@ -174,13 +174,13 @@ static int nforce2_set_fsb(unsigned int fsb)
 	int pll = 0;
 
 	if ((fsb > max_fsb) || (fsb < NFORCE2_MIN_FSB)) {
-		pr_err("FSB %d is out of range!\n", fsb);
+		pr_debug("FSB %d is out of range!\n", fsb);
 		return -EINVAL;
 	}
 
 	tfsb = nforce2_fsb_read(0);
 	if (!tfsb) {
-		pr_err("Error while reading the FSB\n");
+		pr_debug("Error while reading the FSB\n");
 		return -EINVAL;
 	}
 
@@ -276,7 +276,7 @@ static int nforce2_target(struct cpufreq_policy *policy,
 	/* local_irq_save(flags); */
 
 	if (nforce2_set_fsb(target_fsb) < 0)
-		pr_err("Changing FSB to %d failed\n", target_fsb);
+		pr_debug("Changing FSB to %d failed\n", target_fsb);
 	else
 		pr_debug("Changed FSB successfully to %d\n",
 			target_fsb);
@@ -339,7 +339,7 @@ static int nforce2_cpu_init(struct cpufreq_policy *policy)
 		}
 	}
 
-	pr_info("FSB currently at %i MHz, FID %d.%d\n",
+	pr_debug("FSB currently at %i MHz, FID %d.%d\n",
 		fsb, fid / 10, fid % 10);
 
 	/* Set maximum FSB to FSB at boot time */
@@ -399,9 +399,9 @@ static int nforce2_detect_chipset(void)
 	if (nforce2_dev == NULL)
 		return -ENODEV;
 
-	pr_info("Detected nForce2 chipset revision %X\n",
+	pr_debug("Detected nForce2 chipset revision %X\n",
 		nforce2_dev->revision);
-	pr_info("FSB changing is maybe unstable and can lead to crashes and data loss\n");
+	pr_debug("FSB changing is maybe unstable and can lead to crashes and data loss\n");
 
 	return 0;
 }
@@ -419,7 +419,7 @@ static int __init nforce2_init(void)
 
 	/* detect chipset */
 	if (nforce2_detect_chipset()) {
-		pr_info("No nForce2 chipset\n");
+		pr_debug("No nForce2 chipset\n");
 		return -ENODEV;
 	}
 

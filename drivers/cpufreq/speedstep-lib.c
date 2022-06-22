@@ -155,7 +155,7 @@ static unsigned int pentium_core_get_frequency(void)
 		fsb = 333333;
 		break;
 	default:
-		pr_err("PCORE - MSR_FSB_FREQ undefined value\n");
+		pr_debug("PCORE - MSR_FSB_FREQ undefined value\n");
 	}
 
 	rdmsr(MSR_IA32_EBL_CR_POWERON, msr_lo, msr_tmp);

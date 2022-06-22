@@ -105,7 +105,7 @@ static int resources_available(void)
 
 	cpu_dev = get_cpu_device(0);
 	if (!cpu_dev) {
-		pr_err("failed to get cpu0 device\n");
+		pr_debug("failed to get cpu0 device\n");
 		return -ENODEV;
 	}
 
@@ -164,7 +164,7 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 
 	cpu_dev = get_cpu_device(policy->cpu);
 	if (!cpu_dev) {
-		pr_err("failed to get cpu%d device\n", policy->cpu);
+		pr_debug("failed to get cpu%d device\n", policy->cpu);
 		return -ENODEV;
 	}
 

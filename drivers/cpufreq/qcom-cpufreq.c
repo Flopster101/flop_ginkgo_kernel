@@ -164,7 +164,7 @@ static int msm_cpufreq_init(struct cpufreq_policy *policy)
 
 	ret = cpufreq_table_validate_and_show(policy, table);
 	if (ret) {
-		pr_err("cpufreq: failed to get policy min/max\n");
+		pr_debug("cpufreq: failed to get policy min/max\n");
 		return ret;
 	}
 
@@ -341,7 +341,7 @@ static void msm_cpufreq_ready(struct cpufreq_policy *policy)
 
 			cdev[cpu] = of_cpufreq_cooling_register(np, policy);
 			if (IS_ERR(cdev[cpu])) {
-				pr_err(
+				pr_debug(
 				"running cpufreq for CPU%d without cooling dev: %ld\n",
 				cpu, PTR_ERR(cdev[cpu]));
 				cdev[cpu] = NULL;

@@ -165,7 +165,7 @@ bL_cpufreq_set_rate(u32 cpu, u32 old_cluster, u32 new_cluster, u32 rate)
 	}
 
 	if (WARN_ON(ret)) {
-		pr_err("clk_set_rate failed: %d, new cluster: %d\n", ret,
+		pr_debug("clk_set_rate failed: %d, new cluster: %d\n", ret,
 				new_cluster);
 		if (bLs) {
 			per_cpu(cpu_last_req_freq, cpu) = prev_rate;
@@ -198,7 +198,7 @@ bL_cpufreq_set_rate(u32 cpu, u32 old_cluster, u32 new_cluster, u32 rate)
 					__func__, old_cluster, new_rate);
 
 			if (clk_set_rate(clk[old_cluster], new_rate * 1000))
-				pr_err("%s: clk_set_rate failed: %d, old cluster: %d\n",
+				pr_debug("%s: clk_set_rate failed: %d, old cluster: %d\n",
 						__func__, ret, old_cluster);
 		}
 		mutex_unlock(&cluster_lock[old_cluster]);
@@ -336,7 +336,7 @@ static void put_cluster_clk_and_freq_table(struct device *cpu_dev,
 	for_each_present_cpu(i) {
 		struct device *cdev = get_cpu_device(i);
 		if (!cdev) {
-			pr_err("%s: failed to get cpu%d device\n", __func__, i);
+			pr_debug("%s: failed to get cpu%d device\n", __func__, i);
 			return;
 		}
 
@@ -415,7 +415,7 @@ static int get_cluster_clk_and_freq_table(struct device *cpu_dev,
 	for_each_present_cpu(i) {
 		struct device *cdev = get_cpu_device(i);
 		if (!cdev) {
-			pr_err("%s: failed to get cpu%d device\n", __func__, i);
+			pr_debug("%s: failed to get cpu%d device\n", __func__, i);
 			return -ENODEV;
 		}
 
@@ -441,7 +441,7 @@ put_clusters:
 	for_each_present_cpu(i) {
 		struct device *cdev = get_cpu_device(i);
 		if (!cdev) {
-			pr_err("%s: failed to get cpu%d device\n", __func__, i);
+			pr_debug("%s: failed to get cpu%d device\n", __func__, i);
 			return -ENODEV;
 		}
 
@@ -462,7 +462,7 @@ static int bL_cpufreq_init(struct cpufreq_policy *policy)
 
 	cpu_dev = get_cpu_device(policy->cpu);
 	if (!cpu_dev) {
-		pr_err("%s: failed to get cpu%d device\n", __func__,
+		pr_debug("%s: failed to get cpu%d device\n", __func__,
 				policy->cpu);
 		return -ENODEV;
 	}
@@ -513,7 +513,7 @@ static int bL_cpufreq_exit(struct cpufreq_policy *policy)
 
 	cpu_dev = get_cpu_device(policy->cpu);
 	if (!cpu_dev) {
-		pr_err("%s: failed to get cpu%d device\n", __func__,
+		pr_debug("%s: failed to get cpu%d device\n", __func__,
 				policy->cpu);
 		return -ENODEV;
 	}
@@ -629,7 +629,7 @@ int bL_cpufreq_register(struct cpufreq_arm_bL_ops *ops)
 
 	if (!ops || !strlen(ops->name) || !ops->init_opp_table ||
 	    !ops->get_transition_latency) {
-		pr_err("%s: Invalid arm_bL_ops, exiting\n", __func__);
+		pr_debug("%s: Invalid arm_bL_ops, exiting\n", __func__);
 		return -ENODEV;
 	}
 
@@ -642,7 +642,7 @@ int bL_cpufreq_register(struct cpufreq_arm_bL_ops *ops)
 
 	ret = cpufreq_register_driver(&bL_cpufreq_driver);
 	if (ret) {
-		pr_info("%s: Failed registering platform driver: %s, err: %d\n",
+		pr_debug("%s: Failed registering platform driver: %s, err: %d\n",
 				__func__, ops->name, ret);
 		arm_bL_ops = NULL;
 	} else {
@@ -651,7 +651,7 @@ int bL_cpufreq_register(struct cpufreq_arm_bL_ops *ops)
 			cpufreq_unregister_driver(&bL_cpufreq_driver);
 			arm_bL_ops = NULL;
 		} else {
-			pr_info("%s: Registered platform driver: %s\n",
+			pr_debug("%s: Registered platform driver: %s\n",
 					__func__, ops->name);
 		}
 	}
@@ -664,7 +664,7 @@ EXPORT_SYMBOL_GPL(bL_cpufreq_register);
 void bL_cpufreq_unregister(struct cpufreq_arm_bL_ops *ops)
 {
 	if (arm_bL_ops != ops) {
-		pr_err("%s: Registered with: %s, can't unregister, exiting\n",
+		pr_debug("%s: Registered with: %s, can't unregister, exiting\n",
 				__func__, arm_bL_ops->name);
 		return;
 	}
@@ -673,7 +673,7 @@ void bL_cpufreq_unregister(struct cpufreq_arm_bL_ops *ops)
 	__bLs_unregister_notifier();
 	cpufreq_unregister_driver(&bL_cpufreq_driver);
 	bL_switcher_put_enabled();
-	pr_info("%s: Un-registered platform driver: %s\n", __func__,
+	pr_debug("%s: Un-registered platform driver: %s\n", __func__,
 			arm_bL_ops->name);
 	arm_bL_ops = NULL;
 }

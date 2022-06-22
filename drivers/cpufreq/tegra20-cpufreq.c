@@ -116,7 +116,7 @@ static int tegra_target(struct cpufreq_policy *policy, unsigned int index)
 	ret = clk_set_rate(pll_x_clk, rate * 1000);
 	/* Restore to earlier frequency on error, i.e. pll_x */
 	if (ret)
-		pr_err("Failed to change pll_x to %lu\n", rate);
+		pr_debug("Failed to change pll_x to %lu\n", rate);
 
 	ret = clk_set_parent(cpu_clk, pll_x_clk);
 	/* This shouldn't fail while changing or restoring */

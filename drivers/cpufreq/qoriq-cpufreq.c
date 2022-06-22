@@ -67,7 +67,7 @@ static u32 get_bus_freq(void)
 	/* get platform freq by its clock name */
 	pltclk = clk_get(NULL, "cg-pll0-div1");
 	if (IS_ERR(pltclk)) {
-		pr_err("%s: can't get bus frequency %ld\n",
+		pr_debug("%s: can't get bus frequency %ld\n",
 		       __func__, PTR_ERR(pltclk));
 		return PTR_ERR(pltclk);
 	}
@@ -102,7 +102,7 @@ static void set_affected_cpus(struct cpufreq_policy *policy)
 	for_each_present_cpu(i) {
 		clk = cpu_to_clk(i);
 		if (IS_ERR(clk)) {
-			pr_err("%s: no clock for cpu %d\n", __func__, i);
+			pr_debug("%s: no clock for cpu %d\n", __func__, i);
 			continue;
 		}
 
@@ -184,7 +184,7 @@ static int qoriq_cpufreq_cpu_init(struct cpufreq_policy *policy)
 
 	policy->clk = of_clk_get(np, 0);
 	if (IS_ERR(policy->clk)) {
-		pr_err("%s: no clock information\n", __func__);
+		pr_debug("%s: no clock information\n", __func__);
 		goto err_nomem2;
 	}
 
@@ -193,13 +193,13 @@ static int qoriq_cpufreq_cpu_init(struct cpufreq_policy *policy)
 
 	data->pclk = kcalloc(count, sizeof(struct clk *), GFP_KERNEL);
 	if (!data->pclk) {
-		pr_err("%s: no memory\n", __func__);
+		pr_debug("%s: no memory\n", __func__);
 		goto err_nomem2;
 	}
 
 	table = kcalloc(count + 1, sizeof(*table), GFP_KERNEL);
 	if (!table) {
-		pr_err("%s: no memory\n", __func__);
+		pr_debug("%s: no memory\n", __func__);
 		goto err_pclk;
 	}
 
@@ -217,7 +217,7 @@ static int qoriq_cpufreq_cpu_init(struct cpufreq_policy *policy)
 	/* set the min and max frequency properly */
 	ret = cpufreq_table_validate_and_show(policy, table);
 	if (ret) {
-		pr_err("invalid frequency table: %d\n", ret);
+		pr_debug("invalid frequency table: %d\n", ret);
 		goto err_nomem1;
 	}
 
@@ -281,7 +281,7 @@ static void qoriq_cpufreq_ready(struct cpufreq_policy *policy)
 		cpud->cdev = of_cpufreq_cooling_register(np, policy);
 
 		if (IS_ERR(cpud->cdev) && PTR_ERR(cpud->cdev) != -ENOSYS) {
-			pr_err("cpu%d is not running as cooling device: %ld\n",
+			pr_debug("cpu%d is not running as cooling device: %ld\n",
 					policy->cpu, PTR_ERR(cpud->cdev));
 
 			cpud->cdev = NULL;
@@ -347,7 +347,7 @@ static int __init qoriq_cpufreq_init(void)
 
 	ret = cpufreq_register_driver(&qoriq_cpufreq_driver);
 	if (!ret)
-		pr_info("Freescale QorIQ CPU frequency scaling driver\n");
+		pr_debug("Freescale QorIQ CPU frequency scaling driver\n");
 
 	return ret;
 }

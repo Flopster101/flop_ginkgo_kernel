@@ -1233,7 +1233,7 @@ int cpufreq_interactive_init(struct cpufreq_policy *policy)
 	mutex_unlock(&global_tunables_lock);
 
 	interactive_policy_free(ipolicy);
-	pr_err("governor initialization failed (%d)\n", ret);
+	pr_debug("governor initialization failed (%d)\n", ret);
 
 	return ret;
 }

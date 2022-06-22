@@ -66,13 +66,13 @@ static int __init armada_xp_pmsu_cpufreq_init(void)
 
 		cpu_dev = get_cpu_device(cpu);
 		if (!cpu_dev) {
-			pr_err("Cannot get CPU %d\n", cpu);
+			pr_debug("Cannot get CPU %d\n", cpu);
 			continue;
 		}
 
 		clk = clk_get(cpu_dev, NULL);
 		if (IS_ERR(clk)) {
-			pr_err("Cannot get clock for CPU %d\n", cpu);
+			pr_debug("Cannot get clock for CPU %d\n", cpu);
 			return PTR_ERR(clk);
 		}
 

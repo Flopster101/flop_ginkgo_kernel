@@ -109,7 +109,7 @@ static int s3c2416_cpufreq_set_armdiv(struct s3c2416_data *s3c_freq,
 	if (clk_get_rate(s3c_freq->armdiv) / 1000 != freq) {
 		ret = clk_set_rate(s3c_freq->armdiv, freq * 1000);
 		if (ret < 0) {
-			pr_err("cpufreq: Failed to set armdiv rate %dkHz: %d\n",
+			pr_debug("cpufreq: Failed to set armdiv rate %dkHz: %d\n",
 			       freq, ret);
 			return ret;
 		}
@@ -134,7 +134,7 @@ static int s3c2416_cpufreq_enter_dvs(struct s3c2416_data *s3c_freq, int idx)
 		 clk_get_rate(s3c_freq->hclk) / 1000);
 	ret = clk_set_parent(s3c_freq->armclk, s3c_freq->hclk);
 	if (ret < 0) {
-		pr_err("cpufreq: Failed to switch armclk to hclk: %d\n", ret);
+		pr_debug("cpufreq: Failed to switch armclk to hclk: %d\n", ret);
 		return ret;
 	}
 
@@ -151,7 +151,7 @@ static int s3c2416_cpufreq_enter_dvs(struct s3c2416_data *s3c_freq, int idx)
 
 		/* when lowering the voltage failed, there is nothing to do */
 		if (ret != 0)
-			pr_err("cpufreq: Failed to set VDDARM: %d\n", ret);
+			pr_debug("cpufreq: Failed to set VDDARM: %d\n", ret);
 	}
 #endif
 
@@ -182,7 +182,7 @@ static int s3c2416_cpufreq_leave_dvs(struct s3c2416_data *s3c_freq, int idx)
 					    dvfs->vddarm_min,
 					    dvfs->vddarm_max);
 		if (ret != 0) {
-			pr_err("cpufreq: Failed to set VDDARM: %d\n", ret);
+			pr_debug("cpufreq: Failed to set VDDARM: %d\n", ret);
 			return ret;
 		}
 	}
@@ -195,7 +195,7 @@ static int s3c2416_cpufreq_leave_dvs(struct s3c2416_data *s3c_freq, int idx)
 		ret = s3c2416_cpufreq_set_armdiv(s3c_freq,
 					clk_get_rate(s3c_freq->hclk) / 1000);
 		if (ret < 0) {
-			pr_err("cpufreq: Failed to set the armdiv to %lukHz: %d\n",
+			pr_debug("cpufreq: Failed to set the armdiv to %lukHz: %d\n",
 			       clk_get_rate(s3c_freq->hclk) / 1000, ret);
 			return ret;
 		}
@@ -206,7 +206,7 @@ static int s3c2416_cpufreq_leave_dvs(struct s3c2416_data *s3c_freq, int idx)
 
 	ret = clk_set_parent(s3c_freq->armclk, s3c_freq->armdiv);
 	if (ret < 0) {
-		pr_err("cpufreq: Failed to switch armclk clock parent to armdiv: %d\n",
+		pr_debug("cpufreq: Failed to switch armclk clock parent to armdiv: %d\n",
 		       ret);
 		return ret;
 	}
@@ -271,7 +271,7 @@ static void s3c2416_cpufreq_cfg_regulator(struct s3c2416_data *s3c_freq)
 
 	count = regulator_count_voltages(s3c_freq->vddarm);
 	if (count < 0) {
-		pr_err("cpufreq: Unable to check supported voltages\n");
+		pr_debug("cpufreq: Unable to check supported voltages\n");
 		return;
 	}
 
@@ -347,7 +347,7 @@ static int s3c2416_cpufreq_driver_init(struct cpufreq_policy *policy)
 	msysclk = clk_get(NULL, "msysclk");
 	if (IS_ERR(msysclk)) {
 		ret = PTR_ERR(msysclk);
-		pr_err("cpufreq: Unable to obtain msysclk: %d\n", ret);
+		pr_debug("cpufreq: Unable to obtain msysclk: %d\n", ret);
 		return ret;
 	}
 
@@ -358,12 +358,12 @@ static int s3c2416_cpufreq_driver_init(struct cpufreq_policy *policy)
 	 */
 	rate = clk_get_rate(msysclk);
 	if (rate == 800 * 1000 * 1000) {
-		pr_info("cpufreq: msysclk running at %lukHz, using S3C2416 frequency table\n",
+		pr_debug("cpufreq: msysclk running at %lukHz, using S3C2416 frequency table\n",
 			rate / 1000);
 		s3c_freq->freq_table = s3c2416_freq_table;
 		policy->cpuinfo.max_freq = 400000;
 	} else if (rate / 1000 == 534000) {
-		pr_info("cpufreq: msysclk running at %lukHz, using S3C2450 frequency table\n",
+		pr_debug("cpufreq: msysclk running at %lukHz, using S3C2450 frequency table\n",
 			rate / 1000);
 		s3c_freq->freq_table = s3c2450_freq_table;
 		policy->cpuinfo.max_freq = 534000;
@@ -373,7 +373,7 @@ static int s3c2416_cpufreq_driver_init(struct cpufreq_policy *policy)
 	clk_put(msysclk);
 
 	if (s3c_freq->freq_table == NULL) {
-		pr_err("cpufreq: No frequency information for this CPU, msysclk at %lukHz\n",
+		pr_debug("cpufreq: No frequency information for this CPU, msysclk at %lukHz\n",
 		       rate / 1000);
 		return -ENODEV;
 	}
@@ -383,14 +383,14 @@ static int s3c2416_cpufreq_driver_init(struct cpufreq_policy *policy)
 	s3c_freq->armdiv = clk_get(NULL, "armdiv");
 	if (IS_ERR(s3c_freq->armdiv)) {
 		ret = PTR_ERR(s3c_freq->armdiv);
-		pr_err("cpufreq: Unable to obtain ARMDIV: %d\n", ret);
+		pr_debug("cpufreq: Unable to obtain ARMDIV: %d\n", ret);
 		return ret;
 	}
 
 	s3c_freq->hclk = clk_get(NULL, "hclk");
 	if (IS_ERR(s3c_freq->hclk)) {
 		ret = PTR_ERR(s3c_freq->hclk);
-		pr_err("cpufreq: Unable to obtain HCLK: %d\n", ret);
+		pr_debug("cpufreq: Unable to obtain HCLK: %d\n", ret);
 		goto err_hclk;
 	}
 
@@ -399,7 +399,7 @@ static int s3c2416_cpufreq_driver_init(struct cpufreq_policy *policy)
 	 */
 	rate = clk_get_rate(s3c_freq->hclk);
 	if (rate < 133 * 1000 * 1000) {
-		pr_err("cpufreq: HCLK not at 133MHz\n");
+		pr_debug("cpufreq: HCLK not at 133MHz\n");
 		ret = -EINVAL;
 		goto err_armclk;
 	}
@@ -407,7 +407,7 @@ static int s3c2416_cpufreq_driver_init(struct cpufreq_policy *policy)
 	s3c_freq->armclk = clk_get(NULL, "armclk");
 	if (IS_ERR(s3c_freq->armclk)) {
 		ret = PTR_ERR(s3c_freq->armclk);
-		pr_err("cpufreq: Unable to obtain ARMCLK: %d\n", ret);
+		pr_debug("cpufreq: Unable to obtain ARMCLK: %d\n", ret);
 		goto err_armclk;
 	}
 
@@ -415,7 +415,7 @@ static int s3c2416_cpufreq_driver_init(struct cpufreq_policy *policy)
 	s3c_freq->vddarm = regulator_get(NULL, "vddarm");
 	if (IS_ERR(s3c_freq->vddarm)) {
 		ret = PTR_ERR(s3c_freq->vddarm);
-		pr_err("cpufreq: Failed to obtain VDDARM: %d\n", ret);
+		pr_debug("cpufreq: Failed to obtain VDDARM: %d\n", ret);
 		goto err_vddarm;
 	}
 
