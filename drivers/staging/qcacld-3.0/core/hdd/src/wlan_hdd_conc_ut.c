@@ -153,9 +153,9 @@ void print_report(struct hdd_context *hdd_ctx)
 {
 	uint32_t idx = 0;
 
-	pr_info("+----------Report start -----------+\n");
+	pr_debug("+----------Report start -----------+\n");
 	while (idx < report_idx) {
-		pr_info("Idx:[%d]\nTitle:%s\nResult:[%s]\n\t1st_person[%s]\n\t2nd_persona[%s]\n\t3rd_persona[%s]\n\tDBS[%s]\n\tsystem_config[%s]\n\treason[%s]\n\tpcl[%s]\n",
+		pr_debug("Idx:[%d]\nTitle:%s\nResult:[%s]\n\t1st_person[%s]\n\t2nd_persona[%s]\n\t3rd_persona[%s]\n\tDBS[%s]\n\tsystem_config[%s]\n\treason[%s]\n\tpcl[%s]\n",
 			idx,
 			report[idx].title, report[idx].result_code,
 			report[idx].first_persona, report[idx].second_persona,
@@ -164,7 +164,7 @@ void print_report(struct hdd_context *hdd_ctx)
 			report[idx].pcl);
 		idx++;
 	}
-	pr_info("+----------Report end -----------+\n");
+	pr_debug("+----------Report end -----------+\n");
 }
 
 void fill_report(struct hdd_context *hdd_ctx, char *title,

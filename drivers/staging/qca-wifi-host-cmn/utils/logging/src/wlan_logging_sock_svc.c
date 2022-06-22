@@ -339,7 +339,7 @@ log_to_console(QDF_TRACE_LEVEL level, const char *timestamp, const char *msg)
 		assert_on_excessive_logging();
 		break;
 	case QDF_TRACE_LEVEL_ERROR:
-		pr_err("%s %s\n", timestamp, msg);
+		pr_debug("%s %s\n", timestamp, msg);
 		assert_on_excessive_logging();
 		break;
 	case QDF_TRACE_LEVEL_WARN:
@@ -347,7 +347,7 @@ log_to_console(QDF_TRACE_LEVEL level, const char *timestamp, const char *msg)
 		assert_on_excessive_logging();
 		break;
 	case QDF_TRACE_LEVEL_INFO:
-		pr_info("%s %s\n", timestamp, msg);
+		pr_debug("%s %s\n", timestamp, msg);
 		assert_on_excessive_logging();
 		break;
 	case QDF_TRACE_LEVEL_INFO_HIGH:
