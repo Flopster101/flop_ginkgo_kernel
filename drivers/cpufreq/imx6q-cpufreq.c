@@ -208,7 +208,7 @@ static int imx6q_cpufreq_probe(struct platform_device *pdev)
 
 	cpu_dev = get_cpu_device(0);
 	if (!cpu_dev) {
-		pr_err("failed to get cpu0 device\n");
+		pr_debug("failed to get cpu0 device\n");
 		return -ENODEV;
 	}
 

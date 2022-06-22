@@ -50,7 +50,7 @@ static int dt_get_transition_latency(struct device *cpu_dev)
 
 	np = of_node_get(cpu_dev->of_node);
 	if (!np) {
-		pr_info("Failed to find cpu node. Use CPUFREQ_ETERNAL transition latency\n");
+		pr_debug("Failed to find cpu node. Use CPUFREQ_ETERNAL transition latency\n");
 		return CPUFREQ_ETERNAL;
 	}
 

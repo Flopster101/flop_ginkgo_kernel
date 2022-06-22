@@ -192,11 +192,11 @@ static int pxa3xx_cpufreq_init(struct cpufreq_policy *policy)
 					ARRAY_SIZE(pxa320_freqs));
 
 	if (ret) {
-		pr_err("failed to setup frequency table\n");
+		pr_debug("failed to setup frequency table\n");
 		return ret;
 	}
 
-	pr_info("CPUFREQ support for PXA3xx initialized\n");
+	pr_debug("CPUFREQ support for PXA3xx initialized\n");
 	return 0;
 }
 

@@ -631,7 +631,7 @@ static int acpi_cpufreq_blacklist(struct cpuinfo_x86 *c)
 		if ((c->x86 == 15) &&
 		    (c->x86_model == 6) &&
 		    (c->x86_stepping == 8)) {
-			pr_info("Intel(R) Xeon(R) 7100 Errata AL30, processors may lock up on frequency changes: disabling acpi-cpufreq\n");
+			pr_debug("Intel(R) Xeon(R) 7100 Errata AL30, processors may lock up on frequency changes: disabling acpi-cpufreq\n");
 			return -ENODEV;
 		    }
 		}
@@ -709,7 +709,7 @@ static int acpi_cpufreq_cpu_init(struct cpufreq_policy *policy)
 		cpumask_copy(data->freqdomain_cpus,
 			     topology_sibling_cpumask(cpu));
 		policy->shared_type = CPUFREQ_SHARED_TYPE_HW;
-		pr_info_once("overriding BIOS provided _PSD data\n");
+		pr_debug_once("overriding BIOS provided _PSD data\n");
 	}
 #endif
 
@@ -781,7 +781,7 @@ static int acpi_cpufreq_cpu_init(struct cpufreq_policy *policy)
 	if (perf->control_register.space_id == ACPI_ADR_SPACE_FIXED_HARDWARE &&
 	    policy->cpuinfo.transition_latency > 20 * 1000) {
 		policy->cpuinfo.transition_latency = 20 * 1000;
-		pr_info_once("P-state transition latency capped at 20 uS\n");
+		pr_debug_once("P-state transition latency capped at 20 uS\n");
 	}
 
 	/* table init */
@@ -926,7 +926,7 @@ static void __init acpi_cpufreq_boost_init(void)
 	ret = cpuhp_setup_state(CPUHP_AP_ONLINE_DYN, "cpufreq/acpi:online",
 				cpufreq_boost_online, cpufreq_boost_down_prep);
 	if (ret < 0) {
-		pr_err("acpi_cpufreq: failed to register hotplug callbacks\n");
+		pr_debug("acpi_cpufreq: failed to register hotplug callbacks\n");
 		return;
 	}
 	acpi_cpufreq_online = ret;

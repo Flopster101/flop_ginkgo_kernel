@@ -62,7 +62,7 @@ static struct clk *spear1340_cpu_get_possible_parent(unsigned long newfreq)
 	/* Get parent to sys clock */
 	sys_pclk = clk_get(NULL, sys_clk_src[pclk]);
 	if (IS_ERR(sys_pclk))
-		pr_err("Failed to get %s clock\n", sys_clk_src[pclk]);
+		pr_debug("Failed to get %s clock\n", sys_clk_src[pclk]);
 
 	return sys_pclk;
 }
@@ -80,20 +80,20 @@ static int spear1340_set_cpu_rate(struct clk *sys_pclk, unsigned long newfreq)
 
 	sys_clk = clk_get_parent(spear_cpufreq.clk);
 	if (IS_ERR(sys_clk)) {
-		pr_err("failed to get cpu's parent (sys) clock\n");
+		pr_debug("failed to get cpu's parent (sys) clock\n");
 		return PTR_ERR(sys_clk);
 	}
 
 	/* Set the rate of the source clock before changing the parent */
 	ret = clk_set_rate(sys_pclk, newfreq);
 	if (ret) {
-		pr_err("Failed to set sys clk rate to %lu\n", newfreq);
+		pr_debug("Failed to set sys clk rate to %lu\n", newfreq);
 		return ret;
 	}
 
 	ret = clk_set_parent(sys_clk, sys_pclk);
 	if (ret) {
-		pr_err("Failed to set sys clk parent\n");
+		pr_debug("Failed to set sys clk parent\n");
 		return ret;
 	}
 
@@ -119,7 +119,7 @@ static int spear_cpufreq_target(struct cpufreq_policy *policy,
 		 */
 		srcclk = spear1340_cpu_get_possible_parent(newfreq);
 		if (IS_ERR(srcclk)) {
-			pr_err("Failed to get src clk\n");
+			pr_debug("Failed to get src clk\n");
 			return PTR_ERR(srcclk);
 		}
 
@@ -135,7 +135,7 @@ static int spear_cpufreq_target(struct cpufreq_policy *policy,
 
 	newfreq = clk_round_rate(srcclk, newfreq * mult);
 	if (newfreq <= 0) {
-		pr_err("clk_round_rate failed for cpu src clock\n");
+		pr_debug("clk_round_rate failed for cpu src clock\n");
 		return newfreq;
 	}
 
@@ -145,7 +145,7 @@ static int spear_cpufreq_target(struct cpufreq_policy *policy,
 		ret = clk_set_rate(spear_cpufreq.clk, newfreq);
 
 	if (ret)
-		pr_err("CPU Freq: cpu clk_set_rate failed: %d\n", ret);
+		pr_debug("CPU Freq: cpu clk_set_rate failed: %d\n", ret);
 
 	return ret;
 }
@@ -177,7 +177,7 @@ static int spear_cpufreq_probe(struct platform_device *pdev)
 
 	np = of_cpu_device_node_get(0);
 	if (!np) {
-		pr_err("No cpu node found");
+		pr_debug("No cpu node found");
 		return -ENODEV;
 	}
 
@@ -187,7 +187,7 @@ static int spear_cpufreq_probe(struct platform_device *pdev)
 
 	prop = of_find_property(np, "cpufreq_tbl", NULL);
 	if (!prop || !prop->value) {
-		pr_err("Invalid cpufreq_tbl");
+		pr_debug("Invalid cpufreq_tbl");
 		ret = -ENODEV;
 		goto out_put_node;
 	}
@@ -212,7 +212,7 @@ static int spear_cpufreq_probe(struct platform_device *pdev)
 
 	spear_cpufreq.clk = clk_get(NULL, "cpu_clk");
 	if (IS_ERR(spear_cpufreq.clk)) {
-		pr_err("Unable to get CPU clock\n");
+		pr_debug("Unable to get CPU clock\n");
 		ret = PTR_ERR(spear_cpufreq.clk);
 		goto out_put_mem;
 	}
@@ -221,7 +221,7 @@ static int spear_cpufreq_probe(struct platform_device *pdev)
 	if (!ret)
 		return 0;
 
-	pr_err("failed register driver: %d\n", ret);
+	pr_debug("failed register driver: %d\n", ret);
 	clk_put(spear_cpufreq.clk);
 
 out_put_mem:
