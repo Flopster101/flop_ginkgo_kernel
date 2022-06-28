@@ -293,9 +293,12 @@
 	};
 
 &pm6150l_wled {
-	qcom,string-cfg= <3>;
+	qcom,string-cfg= <1>;
 	qcom,leds-per-string = <7>;
 	status = "ok";
+	qcom,cabc-sel = <0>;
+	qcom,fs-current-limit = <20000>;
+	default-brightness = <2000>;
 };
 
 &pm6150l_lcdb {
