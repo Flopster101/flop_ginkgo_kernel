@@ -19,6 +19,7 @@
 
 /* The minimum number of pages to free per reclaim */
 static unsigned short slmk_minfree __read_mostly = CONFIG_ANDROID_SIMPLE_LMK_MINFREE;
+module_param(slmk_minfree, short, 0644);
 #define MIN_FREE_PAGES (slmk_minfree * SZ_1M / PAGE_SIZE)
 
 /* Kill up to this many victims per reclaim */
@@ -26,6 +27,7 @@ static unsigned short slmk_minfree __read_mostly = CONFIG_ANDROID_SIMPLE_LMK_MIN
 
 /* Timeout in jiffies for each reclaim */
 static unsigned short slmk_timeout __read_mostly = CONFIG_ANDROID_SIMPLE_LMK_TIMEOUT_MSEC;
+module_param(slmk_timeout, short, 0644);
 #define RECLAIM_EXPIRES msecs_to_jiffies(slmk_timeout)
 
 struct victim_info {
