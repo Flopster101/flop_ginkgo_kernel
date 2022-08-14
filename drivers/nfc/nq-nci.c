@@ -812,7 +812,7 @@ static const struct file_operations nfc_dev_fops = {
  * Return:      error codes in case of any failure,
  *              number of bytes read otherwise
  */
-static int get_nfcc_hw_info(struct i2c_client *client,
+static __maybe_unused int get_nfcc_hw_info(struct i2c_client *client,
 		struct nqx_dev *nqx_dev, char nci_reset_rsp_payload_len)
 {
 	int ret = 0;
