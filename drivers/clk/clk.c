@@ -46,7 +46,7 @@ static struct task_struct *enable_owner;
 static int prepare_refcnt;
 static int enable_refcnt;
 
-static unsigned int debug_suspend_flag;
+static __maybe_unused unsigned int debug_suspend_flag;
 
 static HLIST_HEAD(clk_root_list);
 static HLIST_HEAD(clk_orphan_list);
