@@ -229,7 +229,7 @@ exit_idle:
  */
 static void do_idle(void)
 {
-	int cpu = smp_processor_id();
+	// int cpu = smp_processor_id();
 	/*
 	 * If the arch has a polling bit, we maintain an invariant:
 	 *
