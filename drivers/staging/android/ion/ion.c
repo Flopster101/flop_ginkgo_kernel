@@ -199,8 +199,7 @@ static void *ion_dma_buf_vmap(struct dma_buf *dmabuf)
 	}
 	mutex_unlock(&buffer->kmap_lock);
 
-	if (IS_ERR(vaddr))
-		return vaddr;
+	return vaddr;
 }
 
 static void ion_dma_buf_vunmap(struct dma_buf *dmabuf, void *vaddr)
