@@ -9728,6 +9728,7 @@ void hdd_set_vdev_bundle_require_flag(uint16_t vdev_id,
 #define HDD_BW_GET_DIFF(_x, _y) (unsigned long)((ULONG_MAX - (_y)) + (_x) + 1)
 
 #ifdef WLAN_FEATURE_DYNAMIC_RX_AGGREGATION
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0))
 static enum qdisc_filter_status
 __hdd_check_for_prio_filter_in_clsact_qdisc(struct tcf_block *block,
 					    uint32_t prio)
@@ -9750,6 +9751,27 @@ __hdd_check_for_prio_filter_in_clsact_qdisc(struct tcf_block *block,
 
 	return ret;
 }
+#else
+static enum qdisc_filter_status
+__hdd_check_for_prio_filter_in_clsact_qdisc(struct tcf_proto __rcu **chain,
+					    uint32_t prio)
+{
+	struct tcf_proto *tp;
+	enum qdisc_filter_status ret = QDISC_FILTER_PRIO_MISMATCH;
+
+	if (!rtnl_trylock())
+		return QDISC_FILTER_RTNL_LOCK_FAIL;
+
+	for (tp = rtnl_dereference(*chain); tp;
+	     tp = rtnl_dereference(tp->next)) {
+		if (tp->prio == (prio << 16))
+			ret = QDISC_FILTER_PRIO_MATCH;
+	}
+	rtnl_unlock();
+
+	return ret;
+}
+#endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0))
 /**
@@ -9775,7 +9797,7 @@ hdd_check_for_prio_filter_in_clsact_qdisc(struct Qdisc *qdisc, uint32_t prio)
 
 	return __hdd_check_for_prio_filter_in_clsact_qdisc(ingress_block, prio);
 }
-#else
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0))
 static enum qdisc_filter_status
 hdd_check_for_prio_filter_in_clsact_qdisc(struct Qdisc *qdisc, uint32_t prio)
 {
@@ -9791,6 +9813,23 @@ hdd_check_for_prio_filter_in_clsact_qdisc(struct Qdisc *qdisc, uint32_t prio)
 		return QDISC_FILTER_PRIO_MISMATCH;
 
 	return __hdd_check_for_prio_filter_in_clsact_qdisc(ingress_block, prio);
+}
+#else
+static enum qdisc_filter_status
+hdd_check_for_prio_filter_in_clsact_qdisc(struct Qdisc *qdisc, uint32_t prio)
+{
+	const struct Qdisc_class_ops *cops;
+	struct tcf_proto __rcu **ingress_chain;
+
+	cops = qdisc->ops->cl_ops;
+	if (qdf_unlikely(!cops || cops->tcf_chain == NULL))
+		return QDISC_FILTER_PRIO_MISMATCH;
+
+	ingress_chain = cops->tcf_chain(qdisc, TC_H_MIN_INGRESS);
+	if (qdf_unlikely(ingress_chain == NULL))
+		return QDISC_FILTER_PRIO_MISMATCH;
+
+	return __hdd_check_for_prio_filter_in_clsact_qdisc(ingress_chain, prio);
 }
 #endif
 
