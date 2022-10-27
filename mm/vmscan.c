@@ -3209,6 +3209,7 @@ static unsigned long get_pte_pfn(pte_t pte, struct vm_area_struct *vma, unsigned
 	return pfn;
 }
 
+#if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG)
 static unsigned long get_pmd_pfn(pmd_t pmd, struct vm_area_struct *vma, unsigned long addr)
 {
 	unsigned long pfn = pmd_pfn(pmd);
@@ -3226,6 +3227,7 @@ static unsigned long get_pmd_pfn(pmd_t pmd, struct vm_area_struct *vma, unsigned
 
 	return pfn;
 }
+#endif
 
 static struct page *get_pfn_page(unsigned long pfn, struct mem_cgroup *memcg,
 				   struct pglist_data *pgdat, bool can_swap)
@@ -4173,12 +4175,16 @@ static bool isolate_page(struct lruvec *lruvec, struct page *page, struct scan_c
 		return false;
 	}
 
-	success = lru_gen_del_page(lruvec, page, true);
-	VM_WARN_ON_ONCE_PAGE(!success, page);
+	/* see the comment on MAX_NR_TIERS */
+	if (!PageReferenced(page))
+		set_mask_bits(&page->flags, LRU_REFS_MASK | LRU_REFS_FLAGS, 0);
 
 	/* for shrink_page_list() */
 	ClearPageReclaim(page);
 	ClearPageReferenced(page);
+
+	success = lru_gen_del_page(lruvec, page, true);
+	VM_WARN_ON_ONCE_PAGE(!success, page);
 
 	return true;
 }
@@ -4379,11 +4385,12 @@ static int evict_pages(struct lruvec *lruvec, struct scan_control *sc, int swapp
 
 	reclaimed = shrink_page_list(&list, pgdat, sc, 0, NULL, false);
 
-	/*
-	 * To avoid livelock, don't add rejected pages back to the same lists
-	 * they were isolated from. See lru_gen_add_page().
-	 */
 	list_for_each_entry(page, &list, lru) {
+		/* restore LRU_REFS_FLAGS cleared by isolate_page() */
+		if (PageWorkingset(page))
+			SetPageReferenced(page);
+
+		/* don't add rejected pages to the oldest generation */
 		if (PageReclaim(page) && (PageDirty(page) || PageWriteback(page)))
 			ClearPageActive(page);
 		else
@@ -4864,10 +4871,10 @@ static void lru_gen_seq_show_full(struct seq_file *m, struct lruvec *lruvec,
 		unsigned long n = 0;
 
 		if (seq == max_seq && NR_HIST_GENS == 1) {
-			s = "TOYDFA";
+			s = "LOYNFA";
 			n = READ_ONCE(lruvec->mm_state.stats[hist][i]);
 		} else if (seq != max_seq && NR_HIST_GENS > 1) {
-			s = "toydfa";
+			s = "loynfa";
 			n = READ_ONCE(lruvec->mm_state.stats[hist][i]);
 		}
 
@@ -5066,14 +5073,13 @@ static ssize_t lru_gen_seq_write(struct file *file, const char __user *src,
 		return -EFAULT;
 	}
 
-	if (!set_mm_walk(NULL)) {
-		kvfree(buf);
-		return -ENOMEM;
-	}
-
 	set_task_reclaim_state(current, &sc.reclaim_state);
 	flags = memalloc_noreclaim_save();
 	blk_start_plug(&plug);
+	if (!set_mm_walk(NULL)) {
+		err = -ENOMEM;
+		goto done;
+	}
 
 	next = buf;
 	next[len] = '\0';
@@ -5103,12 +5109,12 @@ static ssize_t lru_gen_seq_write(struct file *file, const char __user *src,
 		if (err)
 			break;
 	}
-
+done:
+	clear_mm_walk();
 	blk_finish_plug(&plug);
 	memalloc_noreclaim_restore(flags);
 	set_task_reclaim_state(current, NULL);
 
-	clear_mm_walk();
 	kvfree(buf);
 
 	return err ? : len;
