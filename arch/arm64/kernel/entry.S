@@ -75,6 +75,7 @@
 	.macro kernel_ventry, el, label, regsize = 64
 	.align 7
 .Lventry_start\@:
+#ifdef CONFIG_UNMAP_KERNEL_AT_EL0
 	.if	\el == 0
 	/*
 	 * This must be the first instruction of the EL0 vector entries. It is
@@ -89,6 +90,7 @@
 	.endif
 .Lskip_tramp_vectors_cleanup\@:
 	.endif
+#endif
 
 	sub	sp, sp, #S_FRAME_SIZE
 #ifdef CONFIG_VMAP_STACK
@@ -1064,40 +1066,12 @@ alternative_else_nop_endif
 	sub	\dst, \dst, PAGE_SIZE
 	.endm
 
-	.macro tramp_data_read_var	dst, var
-#ifdef CONFIG_RANDOMIZE_BASE
-	tramp_data_page		\dst
-	add	\dst, \dst, #:lo12:__entry_tramp_data_\var
-	ldr	\dst, [\dst]
-#else
-	ldr	\dst, =\var
-#endif
-	.endm
-
-#define BHB_MITIGATION_NONE	0
-#define BHB_MITIGATION_LOOP	1
-#define BHB_MITIGATION_FW	2
-#define BHB_MITIGATION_INSN	3
-
-	.macro tramp_ventry, vector_start, regsize, kpti, bhb
+	.macro tramp_ventry, vector_start, regsize, kpti
 	.align	7
 1:
 	.if	\regsize == 64
 	msr	tpidrro_el0, x30	// Restored in kernel_ventry
 	.endif
-
-	.if	\bhb == BHB_MITIGATION_LOOP
-	/*
-	 * This sequence must appear before the first indirect branch. i.e. the
-	 * ret out of tramp_ventry. It appears here because x30 is free.
-	 */
-	__mitigate_spectre_bhb_loop	x30
-	.endif // \bhb == BHB_MITIGATION_LOOP
-
-	.if	\bhb == BHB_MITIGATION_INSN
-	clearbhb
-	isb
-	.endif // \bhb == BHB_MITIGATION_INSN
 
 	.if	\kpti == 1
 	/*
@@ -1109,8 +1083,13 @@ alternative_else_nop_endif
 	b	.
 2:
 	tramp_map_kernel	x30
+#ifdef CONFIG_RANDOMIZE_BASE
+	tramp_data_page		x30
 alternative_insn isb, nop, ARM64_WORKAROUND_QCOM_FALKOR_E1003
-	tramp_data_read_var	x30, vectors
+	ldr	x30, [x30]
+#else
+	ldr	x30, =vectors
+#endif
 	prfm	plil1strm, [x30, #(1b - \vector_start)]
 	msr	vbar_el1, x30
 	isb
@@ -1118,29 +1097,13 @@ alternative_insn isb, nop, ARM64_WORKAROUND_QCOM_FALKOR_E1003
 	ldr	x30, =vectors
 	.endif // \kpti == 1
 
-	.if	\bhb == BHB_MITIGATION_FW
-	/*
-	 * The firmware sequence must appear before the first indirect branch.
-	 * i.e. the ret out of tramp_ventry. But it also needs the stack to be
-	 * mapped to save/restore the registers the SMC clobbers.
-	 */
-	__mitigate_spectre_bhb_fw
-	.endif // \bhb == BHB_MITIGATION_FW
-
 	add	x30, x30, #(1b - \vector_start + 4)
 	ret
 .org 1b + 128	// Did we overflow the ventry slot?
 	.endm
 
 	.macro tramp_exit, regsize = 64
-	tramp_data_read_var	x30, this_cpu_vector
-alternative_if_not ARM64_HAS_VIRT_HOST_EXTN
-	mrs	x29, tpidr_el1
-alternative_else
-	mrs	x29, tpidr_el2
-alternative_endif
-	ldr	x30, [x30, x29]
-
+	adr	x30, tramp_vectors
 	msr	vbar_el1, x30
 	ldr	lr, [sp, #S_LR]
 	tramp_unmap_kernel	x29
@@ -1151,33 +1114,26 @@ alternative_endif
 	eret
 	.endm
 
-	.macro	generate_tramp_vector,	kpti, bhb
+	.macro	generate_tramp_vector,	kpti
 .Lvector_start\@:
 	.space	0x400
 
 	.rept	4
-	tramp_ventry	.Lvector_start\@, 64, \kpti, \bhb
+	tramp_ventry	.Lvector_start\@, 64, \kpti
 	.endr
 	.rept	4
-	tramp_ventry	.Lvector_start\@, 32, \kpti, \bhb
+	tramp_ventry	.Lvector_start\@, 32, \kpti
 	.endr
 	.endm
 
 #ifdef CONFIG_UNMAP_KERNEL_AT_EL0
 /*
  * Exception vectors trampoline.
- * The order must match __bp_harden_el1_vectors and the
- * arm64_bp_harden_el1_vectors enum.
  */
 	.pushsection ".entry.tramp.text", "ax"
 	.align	11
 ENTRY(tramp_vectors)
-#ifdef CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY
-	generate_tramp_vector	kpti=1, bhb=BHB_MITIGATION_LOOP
-	generate_tramp_vector	kpti=1, bhb=BHB_MITIGATION_FW
-	generate_tramp_vector	kpti=1, bhb=BHB_MITIGATION_INSN
-#endif /* CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
-	generate_tramp_vector	kpti=1, bhb=BHB_MITIGATION_NONE
+	generate_tramp_vector	kpti=1
 END(tramp_vectors)
 
 ENTRY(tramp_exit_native)
@@ -1211,7 +1167,7 @@ __entry_tramp_data_this_cpu_vector:
  * Exception vectors for spectre mitigations on entry from EL1 when
  * kpti is not in use.
  */
-	.macro generate_el1_vector, bhb
+	.macro generate_el1_vector
 .Lvector_start\@:
 	kernel_ventry	1, sync_invalid			// Synchronous EL1t
 	kernel_ventry	1, irq_invalid			// IRQ EL1t
@@ -1224,22 +1180,17 @@ __entry_tramp_data_this_cpu_vector:
 	kernel_ventry	1, error_invalid		// Error EL1h
 
 	.rept	4
-	tramp_ventry	.Lvector_start\@, 64, 0, \bhb
+	tramp_ventry	.Lvector_start\@, 64, kpti=0
 	.endr
 	.rept 4
-	tramp_ventry	.Lvector_start\@, 32, 0, \bhb
+	tramp_ventry	.Lvector_start\@, 32, kpti=0
 	.endr
 	.endm
 
-/* The order must match tramp_vecs and the arm64_bp_harden_el1_vectors enum. */
 	.pushsection ".entry.text", "ax"
 	.align	11
 ENTRY(__bp_harden_el1_vectors)
-#ifdef CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY
-	generate_el1_vector	bhb=BHB_MITIGATION_LOOP
-	generate_el1_vector	bhb=BHB_MITIGATION_FW
-	generate_el1_vector	bhb=BHB_MITIGATION_INSN
-#endif /* CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY */
+	generate_el1_vector
 END(__bp_harden_el1_vectors)
 	.popsection
 

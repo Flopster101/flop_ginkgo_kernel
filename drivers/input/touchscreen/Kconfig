@@ -1317,4 +1317,6 @@ config TOUCHSCREEN_COMMON
 
 	  If unsure, say N.
 
+source "drivers/input/touchscreen/focaltech_touch/Kconfig"
+
 endif
