@@ -1,3 +1,0 @@
-&pmi632_vib {
-	qcom,vib-ldo-volt-uv = <3300000>;
-};
