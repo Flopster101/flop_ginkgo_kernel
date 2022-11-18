@@ -314,3 +314,10 @@
 		pins = "gpio22", "gpio23", "gpio25";
 	};
 };
+
+&qupv3_se8_spi_sleep {
+	config {
+		bias-pull-down;
+		output-low;
+	};
+};
