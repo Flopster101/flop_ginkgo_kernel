@@ -440,8 +440,10 @@ static int smb5_parse_dt(struct smb5 *chip)
 		chip->dt.sec_charger_config == POWER_SUPPLY_CHARGER_SEC_PL ||
 		chip->dt.sec_charger_config == POWER_SUPPLY_CHARGER_SEC_CP_PL;
 
+#ifndef CONFIG_MACH_XIAOMI_C3J
 	chg->step_chg_enabled = of_property_read_bool(node,
 				"qcom,step-charging-enable");
+#endif
 
 	chg->typec_legacy_use_rp_icl = of_property_read_bool(node,
 				"qcom,typec-legacy-rp-icl");
@@ -595,8 +597,10 @@ static int smb5_parse_dt(struct smb5 *chip)
 	chg->hw_die_temp_mitigation = of_property_read_bool(node,
 					"qcom,hw-die-temp-mitigation");
 
+#ifndef CONFIG_MACH_XIAOMI_C3J
 	chg->hw_connector_mitigation = of_property_read_bool(node,
 					"qcom,hw-connector-mitigation");
+#endif
 
 	chg->hw_skin_temp_mitigation = of_property_read_bool(node,
 					"qcom,hw-skin-temp-mitigation");
@@ -605,8 +609,10 @@ static int smb5_parse_dt(struct smb5 *chip)
 					"qcom,en-skin-therm-mitigation");
 
 	chg->connector_pull_up = -EINVAL;
+#ifndef CONFIG_MACH_XIAOMI_C3J
 	of_property_read_u32(node, "qcom,connector-internal-pull-kohm",
 					&chg->connector_pull_up);
+#endif
 
 	chg->smb_pull_up = -EINVAL;
 	of_property_read_u32(node, "qcom,smb-internal-pull-kohm",
