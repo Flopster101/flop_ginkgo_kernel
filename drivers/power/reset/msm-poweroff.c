@@ -1,5 +1,4 @@
 /* Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
- * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -66,11 +65,7 @@ static void scm_disable_sdi(void);
  * There is no API from TZ to re-enable the registers.
  * So the SDI cannot be re-enabled when it already by-passed.
  */
-#ifdef CONFIG_DISABLE_DOWNLOAD
-int download_mode = 0;
-#else
-int download_mode = 1;
-#endif
+static int download_mode = 1;
 static bool force_warm_reboot;
 static int in_panic;
 
@@ -200,12 +195,10 @@ static int dload_set(const char *val, const struct kernel_param *kp)
 
 	int old_val = download_mode;
 
-	/* make sure DUT entry ramdump by "echo 1 > /sys/module/msm_poweroff/parameters/download_mode" */
-	/*if (!download_mode) {
+	if (!download_mode) {
 		pr_err("Error: SDI dynamic enablement is not supported\n");
 		return -EINVAL;
 	}
-	*/
 
 	ret = param_set_int(val, kp);
 
