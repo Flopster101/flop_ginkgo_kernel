@@ -35,41 +35,36 @@ static u32 stmmac_config_sub_second_increment(void __iomem *ioaddr,
 					      u32 ptp_clock, int gmac4)
 {
 	u32 value = readl(ioaddr + PTP_TCR);
-	u64 ss_inc = 0, sns_inc = 0, ptpclock = 0;
+	unsigned long data;
 	u32 reg_value;
 
-	/* For GMAC3.x, 4.x versions, convert the ptp_clock to nano second
-	 *	formula = (1/ptp_clock) * 1000000000
-	 * where ptp_clock is 50MHz if fine method is used to update system
+	/* For GMAC3.x, 4.x versions, in "fine adjustement mode" set sub-second
+	 * increment to twice the number of nanoseconds of a clock cycle.
+	 * The calculation of the default_addend value by the caller will set it
+	 * to mid-range = 2^31 when the remainder of this division is zero,
+	 * which will make the accumulator overflow once every 2 ptp_clock
+	 * cycles, adding twice the number of nanoseconds of a clock cycle :
+	 * 2000000000ULL / ptp_clock.
 	 */
 	if (value & PTP_TCR_TSCFUPDT)
-		ptpclock = (u64)ptp_clock;
+		data = (2000000000ULL / ptp_clock);
 	else
-		ptpclock = (u64)ptp_clock;
-
-	ss_inc = div_u64((1 * 1000000000ULL), ptpclock);
-	sns_inc = 1000000000ULL - (ss_inc * ptpclock); //take remainder
-
-	//sns_inc needs to be multiplied by 2^8, per spec.
-	sns_inc = div_u64((sns_inc * 256), ptpclock);
+		data = (1000000000ULL / ptp_clock);
 
 	/* 0.465ns accuracy */
 	if (!(value & PTP_TCR_TSCTRLSSR))
-		ss_inc = div_u64((ss_inc * 1000), 465);
+		data = (data * 1000) / 465;
 
-	ss_inc &= PTP_SSIR_SSINC_MASK;
-	sns_inc &= PTP_SSIR_SNSINC_MASK;
+	if (data > PTP_SSIR_SSINC_MAX)
+		data = PTP_SSIR_SSINC_MAX;
 
-	reg_value = ss_inc;
-
+	reg_value = data;
 	if (gmac4)
 		reg_value <<= GMAC4_PTP_SSIR_SSINC_SHIFT;
 
-	reg_value |= (sns_inc << GMAC4_PTP_SSIR_SNSINC_SHIFT);
-
 	writel(reg_value, ioaddr + PTP_SSIR);
 
-	return reg_value;
+	return data;
 }
 
 static int stmmac_init_systime(void __iomem *ioaddr, u32 sec, u32 nsec)
