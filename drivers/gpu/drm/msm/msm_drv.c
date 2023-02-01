@@ -429,7 +429,7 @@ static int msm_init_vram(struct drm_device *dev)
 		of_node_put(node);
 		if (ret)
 			return ret;
-		size = r.end - r.start;
+		size = r.end - r.start + 1;
 		DRM_INFO("using VRAM carveout: %lx@%pa\n", size, &r.start);
 
 		/* if we have no IOMMU, then we need to use carveout allocator.
@@ -2152,6 +2152,7 @@ static void msm_pdev_shutdown(struct platform_device *pdev)
 	/* set this after lastclose to allow kickoff from lastclose */
 	priv->shutdown_in_progress = true;
 }
+
 
 static const struct of_device_id dt_match[] = {
 	{ .compatible = "qcom,mdp4", .data = (void *)4 },	/* MDP4 */
