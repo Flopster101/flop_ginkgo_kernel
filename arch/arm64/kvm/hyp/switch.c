@@ -29,9 +29,6 @@
 #include <asm/fpsimd.h>
 #include <asm/vectors.h>
 
-extern struct exception_table_entry __start___kvm_ex_table;
-extern struct exception_table_entry __stop___kvm_ex_table;
-
 static bool __hyp_text __fpsimd_enabled_nvhe(void)
 {
 	return !(read_sysreg(cptr_el2) & CPTR_EL2_TFP);
