@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -5180,12 +5181,10 @@ static int _sde_crtc_check_secure_state(struct drm_crtc *crtc,
 			int sec_stage = cnt ? pstates[0].sde_pstate->stage :
 						cstate->dim_layer[0].stage;
 
-			if (!sde_kms->catalog->has_base_layer)
-				sec_stage -= SDE_STAGE_0;
 
 			if ((!cnt && !cstate->num_dim_layers) ||
 				(sde_kms->catalog->sui_supported_blendstage
-						!= sec_stage)) {
+						!= (sec_stage - SDE_STAGE_0))) {
 				SDE_ERROR(
 				  "crtc%d: empty cnt%d/dim%d or bad stage%d\n",
 					DRMID(crtc), cnt,
@@ -5259,7 +5258,6 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	struct sde_crtc *sde_crtc;
 	struct plane_state *pstates = NULL;
 	struct sde_crtc_state *cstate;
-	struct sde_kms *kms;
 
 	const struct drm_plane_state *pstate;
 	struct drm_plane *plane;
@@ -5271,7 +5269,7 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 	int multirect_count = 0;
 	const struct drm_plane_state *pipe_staged[SSPP_MAX];
 	int left_zpos_cnt = 0, right_zpos_cnt = 0;
-	int inc_sde_stage = 0;
+	//int inc_sde_stage = 0; test by dgy
 
 	struct drm_connector *conn;
 	struct drm_connector_list_iter conn_iter;
@@ -5285,12 +5283,6 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 
 	sde_crtc = to_sde_crtc(crtc);
 	cstate = to_sde_crtc_state(state);
-	kms = _sde_crtc_get_kms(crtc);
-
-	if (!kms || !kms->catalog) {
-		SDE_ERROR("Invalid kms\n");
-		return -EINVAL;
-	}
 
 	if (!state->enable || !state->active) {
 		SDE_DEBUG("crtc%d -> enable %d, active %d, skip atomic_check\n",
@@ -5381,13 +5373,13 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 		 * check for stages of dimlayer and planestate based on
 		 * has_base_layer property
 		 */
-		if (!kms->catalog->has_base_layer)
-			inc_sde_stage = SDE_STAGE_0;
+		//if (!sde_kms->catalog->has_base_layer) test by dgy
+		//	inc_sde_stage = SDE_STAGE_0;       test by dgy
 
 		/* check dim layer stage with every plane */
 		for (i = 0; i < cstate->num_dim_layers; i++) {
-			if (cstate->dim_layer[i].stage == (pstates[cnt].stage
-						+ inc_sde_stage)) {
+			if (cstate->dim_layer[i].stage 
+					== (pstates[cnt].stage + SDE_STAGE_0)) {
 				SDE_ERROR(
 					"plane:%d/dim_layer:%i-same stage:%d\n",
 					plane->base.id, i,
@@ -5501,10 +5493,7 @@ static int sde_crtc_atomic_check(struct drm_crtc *crtc,
 			right_zpos_cnt++;
 		}
 
-		if (!kms->catalog->has_base_layer)
-			pstates[i].sde_pstate->stage = z_pos + SDE_STAGE_0;
-		else
-			pstates[i].sde_pstate->stage = z_pos;
+		pstates[i].sde_pstate->stage = z_pos + SDE_STAGE_0;
 		SDE_DEBUG("%s: zpos %d", sde_crtc->name, z_pos);
 	}
 
