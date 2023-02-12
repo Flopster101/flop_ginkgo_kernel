@@ -2056,7 +2056,7 @@ static void msm_pinctrl_resume(void)
 
 			pr_warn("%s: %d triggered %s\n", __func__, irq, name);
 
-			log_wakeup_reason(irq); /*Add-HMI_M516_A01-51*/
+			log_irq_wakeup_reason(irq); /*Add-HMI_M516_A01-51*/
 
 		}
 	}
