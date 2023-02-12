@@ -1,4 +1,5 @@
 /* Copyright (c) 2008-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1382,7 +1383,7 @@ static int diag_cmd_set_log_mask(unsigned char *src_buf, int src_len,
 
 	mask_info = (!info) ? &log_mask : info->log_mask;
 	if (!src_buf || !dest_buf || dest_len <= 0 || !mask_info ||
-		src_len < sizeof(struct diag_log_config_req_t)) {
+		src_len < sizeof(struct diag_log_config_get_req_t)) {
 		pr_err("diag: Invalid input in %s, src_buf: %pK, src_len: %d, dest_buf: %pK, dest_len: %d, mask_info: %pK\n",
 		       __func__, src_buf, src_len, dest_buf, dest_len,
 		       mask_info);
