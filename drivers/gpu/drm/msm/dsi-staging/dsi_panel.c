@@ -682,7 +682,10 @@ static int dsi_panel_wled_register(struct dsi_panel *panel,
 	bl->raw_bd = bd;
 	return 0;
 }
-/*
+
+#ifdef CONFIG_BACKLIGHT_KTD3136
+extern int sgm_brightness_set(uint16_t brightness);
+#endif
 static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
@@ -698,14 +701,20 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	if (panel->bl_config.bl_inverted_dbv)
 		bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
+	
+#ifdef CONFIG_BACKLIGHT_KTD3136
+       sgm_brightness_set(bl_lvl);
+#else
 
 	rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl);
 	if (rc < 0)
 		pr_err("failed to update dcs backlight:%d\n", bl_lvl);
 
+#endif
+
 	return rc;
 }
-*/
+
 static int dsi_panel_update_pwm_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
@@ -757,25 +766,6 @@ error:
 	return rc;
 }
 
-extern int sgm_brightness_set(uint16_t brightness);
-static int dsi_panel_update_backlight_externel(struct dsi_panel *panel,
-	u32 bl_lvl)
-{
-
-	pr_err("backlight level :%d\n", bl_lvl);
-	if(bl_lvl > 0)
-		backlight_val = true;
-	else
-	       backlight_val = false;
-	
-	if (!panel || (bl_lvl > 0xffff)) {
-		pr_err("invalid params\n");
-		return -EINVAL;
-	}
-
-	sgm_brightness_set(bl_lvl);
-	return 0;
-}
 int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
 	int rc = 0;
@@ -790,7 +780,7 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 		rc = backlight_device_set_brightness(bl->raw_bd, bl_lvl);
 		break;
 	case DSI_BACKLIGHT_DCS:
-	//	rc = dsi_panel_update_backlight(panel, bl_lvl);
+		rc = dsi_panel_update_backlight(panel, bl_lvl);
 		break;
 	case DSI_BACKLIGHT_EXTERNAL:
 		break;
@@ -802,7 +792,6 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 		rc = -ENOTSUPP;
 	}
 
-	rc = dsi_panel_update_backlight_externel(panel, bl_lvl);
 	return rc;
 }
 
