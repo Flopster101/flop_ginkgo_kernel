@@ -31,8 +31,6 @@ suspend_state_t pm_suspend_target_state;
 #define pm_suspend_target_state	(PM_SUSPEND_ON)
 #endif
 
-#include <linux/wakeup_reason.h> /*Add-HMI_M516_A01-51*/
-
 /*
  * If set, the suspend/hibernate code will abort transitions to a sleep state
  * if wakeup events are registered during or immediately before the transition.
@@ -991,7 +989,7 @@ void pm_system_irq_wakeup(unsigned int irq_number)
 			pr_warn("%s: %d triggered %s\n", __func__,
 					irq_number, name);
 
-			log_wakeup_reason(irq_number); /*Add-HMI_M516_A01-51*/
+			log_irq_wakeup_reason(irq_number); /*Add-HMI_M516_A01-51*/
 
 		}
 		pm_wakeup_irq = irq_number;
