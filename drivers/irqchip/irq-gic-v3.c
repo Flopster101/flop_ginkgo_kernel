@@ -45,7 +45,6 @@
 #include <linux/syscore_ops.h>
 #include <linux/suspend.h>
 #include <linux/notifier.h>
-#include <linux/wakeup_reason.h> /*Add-HMI_M516_A01-51*/
 
 #include "irq-gic-common.h"
 
@@ -474,7 +473,7 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 
 		pr_warn("%s: %d triggered %s\n", __func__, irq, name);
 
-		log_wakeup_reason(irq); /*Add-HMI_M516_A01-51*/
+		log_irq_wakeup_reason(irq); /*Add-HMI_M516_A01-51*/
 
 	}
 }
