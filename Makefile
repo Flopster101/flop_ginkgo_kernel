@@ -503,7 +503,6 @@ ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
 $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
 endif
 endif
-CLANG_FLAGS	+= -integrated-as
 CLANG_FLAGS	+= -Werror=unknown-warning-option
 CLANG_FLAGS	+= $(call cc-option, -Wno-misleading-indentation)
 CLANG_FLAGS	+= $(call cc-option, -Wno-bool-operation)
@@ -837,6 +836,7 @@ else
 KBUILD_CFLAGS	+= -g
 endif
 ifneq ($(LLVM_IAS),1)
+CLANG_FLAGS	+= -integrated-as
 KBUILD_AFLAGS	+= -Wa,-gdwarf-2
 GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
 CLANG_FLAGS	+= --prefix=$(GCC_TOOLCHAIN_DIR)$(notdir $(CROSS_COMPILE))
