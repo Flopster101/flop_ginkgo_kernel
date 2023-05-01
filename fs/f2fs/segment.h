@@ -612,9 +612,9 @@ static inline int utilization(struct f2fs_sb_info *sbi)
  * F2FS_IPU_NOCACHE - disable IPU bio cache.
  * F2FS_IPUT_DISABLE - disable IPU. (=default option in LFS mode)
  */
-#define DEF_MIN_IPU_UTIL	70
-#define DEF_MIN_FSYNC_BLOCKS	20
-#define DEF_MIN_HOT_BLOCKS	16
+#define DEF_MIN_IPU_UTIL	90
+#define DEF_MIN_FSYNC_BLOCKS	32
+#define DEF_MIN_HOT_BLOCKS	32
 
 #define SMALL_VOLUME_SEGMENTS	(16 * 512)	/* 16GB */
 
