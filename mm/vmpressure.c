@@ -49,17 +49,17 @@ static unsigned long vmpressure_win = SWAP_CLUSTER_MAX * 16;
  * essence, they are percents: the higher the value, the more number
  * unsuccessful reclaims there were.
  */
-static const unsigned int vmpressure_level_med = 60;
+static const unsigned int vmpressure_level_med = 70;
 static const unsigned int vmpressure_level_critical = 95;
 
 static unsigned long vmpressure_scale_max = 100;
 module_param_named(vmpressure_scale_max, vmpressure_scale_max,
-			ulong, 0644);
+			ulong, 0444);
 
 /* vmpressure values >= this will be scaled based on allocstalls */
-static unsigned long allocstall_threshold = 70;
+static unsigned long allocstall_threshold = 0;
 module_param_named(allocstall_threshold, allocstall_threshold,
-			ulong, 0644);
+			ulong, 0444);
 
 static struct vmpressure global_vmpressure;
 static BLOCKING_NOTIFIER_HEAD(vmpressure_notifier);
