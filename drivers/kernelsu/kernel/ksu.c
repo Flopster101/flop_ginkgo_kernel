@@ -56,8 +56,6 @@ int __init kernelsu_init(void)
 #ifdef CONFIG_KPROBES
 	ksu_enable_sucompat();
 	ksu_enable_ksud();
-#else
-	pr_alert("KPROBES is disabled, KernelSU may not work, please check https://kernelsu.org/guide/how-to-integrate-for-non-gki.html");
 #endif
 
 	return 0;
