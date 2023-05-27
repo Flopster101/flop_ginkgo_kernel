@@ -758,3 +758,6 @@ CONFIG_PSI=y
 
 # WireGuard
 CONFIG_WIREGUARD=y
+
+# KernelSU
+CONFIG_KSU=y
