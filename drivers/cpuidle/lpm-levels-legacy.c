@@ -1002,7 +1002,7 @@ static bool psci_enter_sleep(struct lpm_cluster *cluster,
 #endif
 
 static int lpm_cpuidle_select(struct cpuidle_driver *drv,
-		struct cpuidle_device *dev, bool *stop_tick)
+		struct cpuidle_device *dev)
 {
 	struct lpm_cluster *cluster = per_cpu(cpu_cluster, dev->cpu);
 	int idx;
