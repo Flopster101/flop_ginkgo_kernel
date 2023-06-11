@@ -12,7 +12,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 fun SwitchItem(
     icon: ImageVector? = null,
     title: String,
+    summary: String? = null,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
     ListItem(
@@ -23,8 +25,13 @@ fun SwitchItem(
             { Icon(icon, title) }
         },
         trailingContent = {
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
+            Switch(checked = checked, enabled = enabled, onCheckedChange = onCheckedChange)
         },
+        supportingContent = {
+            if (summary != null) {
+                Text(summary)
+            }
+        }
     )
 }
 

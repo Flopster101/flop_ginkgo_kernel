@@ -105,11 +105,11 @@
         "devices": "Mi 8 (dipper) for LineageOS"
     },
     {
-        "maintainer": "WeeAris",
-        "maintainer_link": "https://github.com/WeeAris",
-        "kernel_name": "Realking_su_xiaomi_sm8250",
-        "kernel_link": "https://github.com/WeeAris/Realking_su_xiaomi_sm8250",
-        "devices": "Apollo(Redmi K30S Ultra/Mi 10T/Mi 10T Pro)\uff0cAlioth(Redmi K40/POCO F3/Mi 11X)\uff0cMunch(Redmi K40S/POCO F4), repo for AOSP only."
+        "maintainer": "Rohail33",
+        "maintainer_link": "https://github.com/Rohail33",
+        "kernel_name": "RealKing Kernel",
+        "kernel_link": "https://github.com/Rohail33/Realking_kernel_sm8250",
+        "devices": "Apollo(Redmi K30S Ultra/Mi 10T/Mi 10T Pro)\uff0cAlioth(Redmi K40/POCO F3/Mi 11X)\uff0cMunch(Redmi K40S/POCO F4), both MIUI and AOSP."
     },
     {
         "maintainer": "lateautumn233",
@@ -314,7 +314,7 @@
         "kernel_link": "https://github.com/TheNoFace/kernel_oneplus_msm8998/tree/pe-13-ksu",
         "devices": "OnePlus 5/5T (cheeseburger/dumpling)"
     },
-        {
+    {
         "maintainer": "Nipin NA (Joker-V2)",
         "maintainer_link": "https://github.com/Joker-V2",
         "kernel_name": "Xcalibur kernel (violet)",
@@ -334,5 +334,12 @@
         "kernel_name": "android_kernel_OPPO_OP4ED5",
         "kernel_link": "https://github.com/dabao1955/android_kernel_OPPO_OP4ED5",
         "devices": "OPPO Reno6 on ColorOS11.x/ColorOS12.x\uff0ckernel version4.14.186+"
+    },
+    {
+        "maintainer": "rushiranpise",
+        "maintainer_link": "https://github.com/rushiranpise",
+        "kernel_name": "android_kernel_samsung_exynos9610_mint",
+        "kernel_link": "https://github.com/rushiranpise/android_kernel_samsung_exynos9610_mint",
+        "devices": "Kernel 4.14.194 exynos9610 Non-GKI Device, Added KernelSu using manual method"
     }
 ]
