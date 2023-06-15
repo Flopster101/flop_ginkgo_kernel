@@ -3584,7 +3584,7 @@ static void walk_mm(struct lruvec *lruvec, struct mm_struct *mm, struct lru_gen_
 
 		/* the caller might be holding the lock for write */
 		if (down_read_trylock(&mm->mmap_sem)) {
-			err = walk_page_range(mm, walk->next_addr, ULONG_MAX, &mm_walk_ops, walk);
+			err = walk_page_range(walk->next_addr, ULONG_MAX, &args);
 
 			up_read(&mm->mmap_sem);
 
