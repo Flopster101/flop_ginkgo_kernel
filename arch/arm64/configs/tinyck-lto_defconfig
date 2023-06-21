@@ -759,3 +759,6 @@ CONFIG_PSI=y
 
 # WireGuard
 CONFIG_WIREGUARD=y
+
+# Cpuidle
+CONFIG_CPU_IDLE_GOV_TEO=y
