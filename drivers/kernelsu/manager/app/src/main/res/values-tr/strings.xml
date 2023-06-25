@@ -15,8 +15,8 @@
 
     <string name="home_selinux_status">SELinux Durumu</string>
     <string name="selinux_status_disabled">Devre dışı</string>
-    <string name="selinux_status_enforcing">Zorunlu</string>
-    <string name="selinux_status_permissive">Serbest</string>
+    <string name="selinux_status_enforcing">Enforcing</string>
+    <string name="selinux_status_permissive">Permissive</string>
     <string name="selinux_status_unknown">Bilinmiyor</string>
     <string name="superuser">Süper kullanıcı</string>
     <string name="module_failed_to_enable">Modül etkinleştirilemedi: %s</string>
@@ -63,5 +63,19 @@
     <string name="profile_namespace_inherited">Kalıtsal</string>
     <string name="profile_namespace_global">Küresel</string>
     <string name="profile_namespace_individual">Bireysel</string>
+    <string name="profile_groups">Gruplar</string>
+    <string name="profile_capabilities">Yetkiler</string>
+    <string name="profile_selinux_context">SELinux içeriği</string>
     <string name="profile_umount_modules">Modüllerin bağlantısını kes</string>
+    <string name="failed_to_update_app_profile">%s için uygulama profili güncellenemedi.</string>
+    <string name="require_kernel_version">Mevcut kernel versiyonu %d yöneticinin düzgün çalışabilmesi için çok düşük. Lütfen %d veya yukarısına yükseltin!</string>
+    <string name="settings_umount_modules_default">Varsayılan olarak modüllerin bağlantısını kesin</string>
+    <string name="settings_umount_modules_default_summary">Uygulama profillerindeki \"Modüllerin bağlantısını kesme\" seçeneği için varsayılan değer. Etkinleştirilirse, profil ayarı yapılmamış uygulamalar için modüllerin sistemde yaptığı tüm değişiklikler kaldırılacaktır.</string>
+    <string name="profile_umount_modules_summary">Bu seçeneğin etkinleştirilmesi ile, bu uygulama için modüller tarafından değiştirilen tüm dosyaların KernelSU tarafından geri alınmasına izin verilecektir.</string>
+    <string name="profile_selinux_domain">Etki alanı</string>
+    <string name="profile_selinux_rules">Kurallar</string>
+    <string name="module_update">Güncelle</string>
+    <string name="module_downloading">Modül indiriliyor: %s</string>
+    <string name="module_start_downloading">İndirme başladı: %s</string>
+    <string name="new_version_available">Yeni versiyon: %s mevcut, indirmek için tıklayın</string>
 </resources>
