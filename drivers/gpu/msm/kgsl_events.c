@@ -1,14 +1,7 @@
-/* Copyright (c) 2011-2019, The Linux Foundation. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 and
- * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (c) 2011-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/slab.h>
@@ -32,17 +25,30 @@ static inline void signal_event(struct kgsl_device *device,
 {
 	list_del(&event->node);
 	event->result = result;
-	queue_work(device->events_wq, &event->work);
+	kthread_queue_work(device->events_worker, &event->work);
+}
+
+static const char *priorities[KGSL_EVENT_NUM_PRIORITIES] = {
+	"KGSL_EVENT_REGULAR_PRIORITY",
+	"KGSL_EVENT_LOW_PRIORITY"
+};
+
+const char *prio_to_string(enum kgsl_priority prio)
+{
+	if (prio < KGSL_EVENT_NUM_PRIORITIES)
+		return priorities[prio];
+	else
+		return "<invalid priority>";
 }
 
 /**
  * _kgsl_event_worker() - Work handler for processing GPU event callbacks
- * @work: Pointer to the work_struct for the event
+ * @work: Pointer to the kthread_work for the event
  *
- * Each event callback has its own work struct and is run on a event specific
- * workqeuue.  This is the worker that queues up the event callback function.
+ * Each event callback has its own kthread_work struct and is run on a event specific
+ * worker thread.  This is the worker that queues up the event callback function.
  */
-static void _kgsl_event_worker(struct work_struct *work)
+static void _kgsl_event_worker(struct kthread_work *work)
 {
 	struct kgsl_event *event = container_of(work, struct kgsl_event, work);
 
@@ -235,16 +241,10 @@ bool kgsl_event_pending(struct kgsl_device *device,
 	spin_unlock(&group->lock);
 	return result;
 }
-/**
- * kgsl_add_event() - Add a new GPU event to a group
- * @device: Pointer to a KGSL device
- * @group: Pointer to the group to add the event to
- * @timestamp: Timestamp that the event will expire on
- * @func: Callback function for the event
- * @priv: Private data to send to the callback function
- */
-int kgsl_add_event(struct kgsl_device *device, struct kgsl_event_group *group,
-		unsigned int timestamp, kgsl_event_func func, void *priv)
+
+static int kgsl_add_event_common(struct kgsl_device *device,
+		struct kgsl_event_group *group, unsigned int timestamp,
+		kgsl_event_func func, void *priv, enum kgsl_priority prio)
 {
 	unsigned int queued;
 	struct kgsl_context *context = group->context;
@@ -284,8 +284,9 @@ int kgsl_add_event(struct kgsl_device *device, struct kgsl_event_group *group,
 	event->func = func;
 	event->created = jiffies;
 	event->group = group;
+	event->prio = prio;
 
-	INIT_WORK(&event->work, _kgsl_event_worker);
+	kthread_init_work(&event->work, _kgsl_event_worker);
 
 	trace_kgsl_register_event(KGSL_CONTEXT_ID(context), timestamp, func);
 
@@ -300,7 +301,7 @@ int kgsl_add_event(struct kgsl_device *device, struct kgsl_event_group *group,
 
 	if (timestamp_cmp(retired, timestamp) >= 0) {
 		event->result = KGSL_EVENT_RETIRED;
-		queue_work(device->events_wq, &event->work);
+		kthread_queue_work(device->events_worker, &event->work);
 		spin_unlock(&group->lock);
 		return 0;
 	}
@@ -312,7 +313,31 @@ int kgsl_add_event(struct kgsl_device *device, struct kgsl_event_group *group,
 
 	return 0;
 }
+
+/**
+ * kgsl_add_event() - Add a new GPU event to a group
+ * @device: Pointer to a KGSL device
+ * @group: Pointer to the group to add the event to
+ * @timestamp: Timestamp that the event will expire on
+ * @func: Callback function for the event
+ * @priv: Private data to send to the callback function
+ */
+int kgsl_add_event(struct kgsl_device *device, struct kgsl_event_group *group,
+		unsigned int timestamp, kgsl_event_func func, void *priv)
+{
+	return kgsl_add_event_common(device, group, timestamp, func, priv,
+		KGSL_EVENT_REGULAR_PRIORITY);
+}
 EXPORT_SYMBOL(kgsl_add_event);
+
+int kgsl_add_low_prio_event(
+		struct kgsl_device *device, struct kgsl_event_group *group,
+		unsigned int timestamp, kgsl_event_func func, void *priv)
+{
+	return kgsl_add_event_common(device, group, timestamp, func, priv,
+		KGSL_EVENT_LOW_PRIORITY);
+}
+EXPORT_SYMBOL(kgsl_add_low_prio_event);
 
 static DEFINE_RWLOCK(group_lock);
 static LIST_HEAD(group_list);
@@ -389,11 +414,11 @@ static void events_debugfs_print_group(struct seq_file *s,
 		group->readtimestamp(event->device, group->priv,
 			KGSL_TIMESTAMP_RETIRED, &retired);
 
-		seq_printf(s, "\t%u:%u age=%lu func=%ps [retired=%u]\n",
+		seq_printf(s, "\t%u:%u age=%lu func=%ps [retired=%u] prio=%s\n",
 			group->context ? group->context->id :
-						KGSL_MEMSTORE_GLOBAL,
+				KGSL_MEMSTORE_GLOBAL,
 			event->timestamp, jiffies  - event->created,
-			event->func, retired);
+			event->func, retired, prio_to_string(event->prio));
 	}
 	spin_unlock(&group->lock);
 }
