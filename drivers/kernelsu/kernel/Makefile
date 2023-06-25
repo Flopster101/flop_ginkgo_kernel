@@ -13,7 +13,7 @@ obj-y += kernel_compat.o
 
 obj-y += selinux/
 # .git is a text file while the module is imported by 'git submodule add'.
-ccflags-y += -DKSU_GIT_VERSION=794
+ccflags-y += -DKSU_GIT_VERSION=846
 
 ifndef EXPECTED_SIZE
 EXPECTED_SIZE := 0x033b
