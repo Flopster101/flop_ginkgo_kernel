@@ -1,5 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0+ OR BSD-3-Clause */
 /*
- * Copyright (c) Yann Collet, Facebook, Inc.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
  *
  * This source code is licensed under both the BSD-style license (found in the
@@ -41,12 +42,15 @@
 */
 #define WIN_CDECL
 
+/* UNUSED_ATTR tells the compiler it is okay if the function is unused. */
+#define UNUSED_ATTR __attribute__((unused))
+
 /*
  * FORCE_INLINE_TEMPLATE is used to define C "templates", which take constant
  * parameters. They must be inlined for the compiler to eliminate the constant
  * branches.
  */
-#define FORCE_INLINE_TEMPLATE static INLINE_KEYWORD FORCE_INLINE_ATTR
+#define FORCE_INLINE_TEMPLATE static INLINE_KEYWORD FORCE_INLINE_ATTR UNUSED_ATTR
 /*
  * HINT_INLINE is used to help the compiler generate better code. It is *not*
  * used for "templates", so it can be tweaked based on the compilers
@@ -61,11 +65,21 @@
 #if !defined(__clang__) && defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 8 && __GNUC__ < 5
 #  define HINT_INLINE static INLINE_KEYWORD
 #else
-#  define HINT_INLINE static INLINE_KEYWORD FORCE_INLINE_ATTR
+#  define HINT_INLINE FORCE_INLINE_TEMPLATE
 #endif
 
-/* UNUSED_ATTR tells the compiler it is okay if the function is unused. */
-#define UNUSED_ATTR __attribute__((unused))
+/* "soft" inline :
+ * The compiler is free to select if it's a good idea to inline or not.
+ * The main objective is to silence compiler warnings
+ * when a defined function in included but not used.
+ *
+ * Note : this macro is prefixed `MEM_` because it used to be provided by `mem.h` unit.
+ * Updating the prefix is probably preferable, but requires a fairly large codemod,
+ * since this name is used everywhere.
+ */
+#ifndef MEM_STATIC  /* already defined in Linux Kernel mem.h */
+#define MEM_STATIC static __inline UNUSED_ATTR
+#endif
 
 /* force no inlining */
 #define FORCE_NOINLINE static __attribute__((__noinline__))
@@ -125,6 +139,12 @@
 #define LIKELY(x) (__builtin_expect((x), 1))
 #define UNLIKELY(x) (__builtin_expect((x), 0))
 
+#if __has_builtin(__builtin_unreachable) || (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)))
+#  define ZSTD_UNREACHABLE { assert(0), __builtin_unreachable(); }
+#else
+#  define ZSTD_UNREACHABLE { assert(0); }
+#endif
+
 /* disable warnings */
 
 /*Like DYNAMIC_BMI2 but for compile time determination of BMI2 support*/
@@ -172,6 +192,17 @@
 /*-**************************************************************
 *  Sanitizer
 *****************************************************************/
+
+/* Issue #3240 reports an ASAN failure on an llvm-mingw build. Out of an
+ * abundance of caution, disable our custom poisoning on mingw. */
+#ifdef __MINGW32__
+#ifndef ZSTD_ASAN_DONT_POISON_WORKSPACE
+#define ZSTD_ASAN_DONT_POISON_WORKSPACE 1
+#endif
+#ifndef ZSTD_MSAN_DONT_POISON_WORKSPACE
+#define ZSTD_MSAN_DONT_POISON_WORKSPACE 1
+#endif
+#endif
 
 
 
