@@ -19,9 +19,13 @@ KSU_GIT_VERSION := $(shell cd $(srctree)/$(src); /usr/bin/env PATH="$$PATH":/usr
 $(eval KSU_VERSION=$(shell expr 10000 + $(KSU_GIT_VERSION) + 200))
 $(info -- KernelSU version: $(KSU_VERSION))
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
-else # If there is no .git file, the default version will be passed.
-$(warning "KSU_GIT_VERSION not defined! It is better to make KernelSU a git submodule!")
-ccflags-y += -DKSU_VERSION=16
+else # If there is no .git file, a hardcoded version will be passed.
+$(warning "KSU_GIT_VERSION not found! It is better to make KernelSU a git submodule!")
+KSU_GIT_VERSION := 885
+# ksu_version: major * 10000 + git version + 200 for historical reasons
+$(eval KSU_VERSION=$(shell expr 10000 + $(KSU_GIT_VERSION) + 200))
+$(info -- KernelSU version: $(KSU_VERSION))
+ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 endif
 
 ifndef EXPECTED_SIZE
