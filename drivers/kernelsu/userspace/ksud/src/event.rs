@@ -3,6 +3,7 @@ use log::{info, warn};
 use std::path::PathBuf;
 use std::{collections::HashMap, path::Path};
 
+use crate::module::prune_modules;
 use crate::{
     assets, defs, mount, restorecon,
     utils::{self, ensure_clean_dir, ensure_dir_exists},
@@ -29,8 +30,8 @@ pub fn mount_systemlessly(module_dir: &str) -> Result<()> {
     // construct overlay mount params
     let dir = std::fs::read_dir(module_dir);
     let Ok(dir) = dir else {
-            bail!("open {} failed", defs::MODULE_DIR);
-        };
+        bail!("open {} failed", defs::MODULE_DIR);
+    };
 
     let mut system_lowerdir: Vec<String> = Vec::new();
 
@@ -148,6 +149,10 @@ pub fn on_post_data_fs() -> Result<()> {
         return Ok(());
     }
 
+    if let Err(e) = prune_modules() {
+        warn!("prune modules failed: {}", e);
+    }
+
     // Then exec common post-fs-data scripts
     if let Err(e) = crate::module::exec_common_scripts("post-fs-data.d", true) {
         warn!("exec common post-fs-data scripts failed: {}", e);
@@ -156,6 +161,10 @@ pub fn on_post_data_fs() -> Result<()> {
     // load sepolicy.rule
     if crate::module::load_sepolicy_rule().is_err() {
         warn!("load sepolicy.rule failed");
+    }
+
+    if let Err(e) = crate::profile::apply_sepolies() {
+        warn!("apply root profile sepolicy failed: {}", e);
     }
 
     // exec modules post-fs-data scripts
@@ -216,10 +225,6 @@ pub fn on_boot_completed() -> Result<()> {
             std::fs::remove_file(module_update_img).with_context(|| "Failed to remove image!")?;
         }
     }
-    Ok(())
-}
-
-pub fn daemon() -> Result<()> {
     Ok(())
 }
 
