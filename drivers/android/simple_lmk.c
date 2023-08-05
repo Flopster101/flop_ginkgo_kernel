@@ -315,7 +315,7 @@ void simple_lmk_trigger(void)
 static int simple_lmk_vmpressure_cb(struct notifier_block *nb,
 				    unsigned long pressure, void *data)
 {
-	if (pressure >= 90)
+	if (pressure >= 80)
 		simple_lmk_trigger();
 
 	return NOTIFY_OK;
