@@ -452,9 +452,12 @@ static unsigned long zs_zpool_compact(void *pool)
 static unsigned long zs_zpool_get_compacted(void *pool)
 {
 	struct zs_pool_stats stats;
+	unsigned long pages_freed = 0;
 
 	zs_pool_stats(pool, &stats);
-	return stats.pages_compacted;
+	pages_freed = atomic_long_read(&stats.pages_compacted);
+
+	return pages_freed;
 }
 
 static u64 zs_zpool_total_size(void *pool)
