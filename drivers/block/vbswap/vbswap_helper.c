@@ -91,7 +91,7 @@ static inline int nix_sh(const char* cmd)
 static void vbswap_helper(void)
 {
 
-  nix_sh("/system/bin/echo 3221225472 > /sys/devices/virtual/block/vbswap0/disksize");
+  nix_sh("/system/bin/echo 3758096384 > /sys/devices/virtual/block/vbswap0/disksize");
   nix_sh("/vendor/bin/mkswap /dev/block/vbswap0");
   nix_sh("/system/bin/swapon /dev/block/vbswap0");
 
