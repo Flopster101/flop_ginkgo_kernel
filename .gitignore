@@ -132,3 +132,6 @@ Android.bp
 
 # Build directory
 /out/
+
+# Gitpod files shouldn't be ignored
+!.gitpod*

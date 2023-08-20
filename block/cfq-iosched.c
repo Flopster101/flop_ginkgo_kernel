@@ -23,23 +23,23 @@
  * tunables
  */
 /* max queue in one round of service */
-static const int cfq_quantum = 16;
+static const int cfq_quantum = 32;
 static const u64 cfq_fifo_expire[2] = { NSEC_PER_SEC / 4, NSEC_PER_SEC / 8 };
 /* maximum backwards seek, in KiB */
-static const int cfq_back_max = 16 * 1024;
+static const int cfq_back_max = 32 * 1024;
 /* penalty of a backwards seek */
 static const int cfq_back_penalty = 1;
 static const u64 cfq_slice_sync = NSEC_PER_SEC / 10;
 static u64 cfq_slice_async = NSEC_PER_SEC / 25;
 static const int cfq_slice_async_rq = 2;
-static u64 cfq_slice_idle = NSEC_PER_SEC / 125;
+static u64 cfq_slice_idle = 0;
 static u64 cfq_group_idle = 1;
 /* IOPP-cfq_rt_idle_only-v1.0.k4.19 */
-static int cfq_rt_idle_only = 1;
-static const u64 cfq_target_latency = (u64)NSEC_PER_SEC * 3/10; /* 300 ms */
+static int cfq_rt_idle_only = 0;
+static const u64 cfq_target_latency = (u64)NSEC_PER_SEC * 1/10; /* 100 ms */
 static const int cfq_hist_divisor = 4;
 /* IOPP-cfq_max_async_dispatch-v1.0.4.4 */
-static int cfq_max_async_dispatch = 4;
+static int cfq_max_async_dispatch = 8;
 
 /*
  * offset from end of queue service tree for idle class
@@ -3759,6 +3759,7 @@ static void cfq_init_prio_data(struct cfq_queue *cfqq, struct cfq_io_cq *cic)
 	switch (ioprio_class) {
 	default:
 		printk(KERN_ERR "cfq: bad prio %x\n", ioprio_class);
+		/* fall through */
 	case IOPRIO_CLASS_NONE:
 		/*
 		 * no prio set, inherit CPU scheduling settings
