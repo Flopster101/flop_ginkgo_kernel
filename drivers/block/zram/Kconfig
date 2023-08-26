@@ -57,5 +57,5 @@ config ZRAM_MEMORY_TRACKING
 
 config ZRAM_SIZE_OVERRIDE
 	int "zram size to set from kernel"
-	range 1 4096
-	default 1536
+	range 1 8589934592
+	default 2147483648
