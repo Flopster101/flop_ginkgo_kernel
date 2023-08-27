@@ -505,7 +505,7 @@ static int simple_lmk_init_set(const char *val, const struct kernel_param *kp)
 	  slmk_minfree = 164;
 	  slmk_timeout = 150;
 	} else {
-	  slmk_minfree = 256;
+	  slmk_minfree = 350;
 	  slmk_timeout = 100;
 	}
 
