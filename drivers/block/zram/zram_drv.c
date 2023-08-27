@@ -41,7 +41,7 @@ static DEFINE_IDR(zram_index_idr);
 static DEFINE_MUTEX(zram_index_mutex);
 
 static int zram_major;
-static const char *default_compressor = "zstd";
+static const char *default_compressor = "lz4";
 
 /* Module params (documentation at end) */
 static unsigned int num_devices = 1;
@@ -1841,7 +1841,7 @@ static ssize_t disksize_store(struct device *dev,
 	if (!disksize)
 		return -EINVAL;
 #else
-	disksize = (u64)SZ_1M * CONFIG_ZRAM_SIZE_OVERRIDE;
+	disksize = (u64)SZ_1 * CONFIG_ZRAM_SIZE_OVERRIDE;
 	pr_info("Overriding zram size to %li", disksize);
 #endif
 	if (!zram_meta_alloc(zram, disksize)) {

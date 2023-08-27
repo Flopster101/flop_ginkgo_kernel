@@ -68,6 +68,7 @@
 			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
+			freq-energy-model;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 			L2_0: l2-cache {
@@ -97,6 +98,7 @@
 			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
+			freq-energy-model;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 
@@ -123,6 +125,7 @@
 			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
+			freq-energy-model;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 
@@ -149,6 +152,7 @@
 			capacity-dmips-mhz = <1024>;
 			sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
 			next-level-cache = <&L2_0>;
+			freq-energy-model;
 			qcom,lmh-dcvs = <&lmh_dcvs0>;
 			#cooling-cells = <2>;
 
@@ -175,6 +179,7 @@
 			capacity-dmips-mhz = <1638>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 			next-level-cache = <&L2_1>;
+			freq-energy-model;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 			L2_1: l2-cache {
@@ -205,6 +210,7 @@
 			capacity-dmips-mhz = <1638>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 			next-level-cache = <&L2_1>;
+			freq-energy-model;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 
@@ -231,6 +237,7 @@
 			capacity-dmips-mhz = <1638>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 			next-level-cache = <&L2_1>;
+			freq-energy-model;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 
@@ -257,6 +264,7 @@
 			capacity-dmips-mhz = <1638>;
 			sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
 			next-level-cache = <&L2_1>;
+			freq-energy-model;
 			qcom,lmh-dcvs = <&lmh_dcvs1>;
 			#cooling-cells = <2>;
 
@@ -321,8 +329,7 @@
 			busy-cost-data = <
 				864000	68
 				1017600	79
-				1305600 114
-				1420800	132
+				1305600	114
 				1612800	171
 				1804800	223
 			>;
@@ -333,10 +340,10 @@
 
 		CPU_COST_1: core-cost1 {
 			busy-cost-data = <
-				1056000	185
+				902400	154
 				1401600	289
-				1536000 344
-				1804800 469
+				1536000	344
+				1804800	469
 				2016000	596
 			>;
 			idle-cost-data = <
@@ -867,12 +874,11 @@
 			<864000>,
 			<1017600>,
 			<1305600>,
-			<1420800>,
 			<1612800>,
 			<1804800>;
 
 		qcom,cpufreq-table-4 =
-			<1056000>,
+			<902400>,
 			<1401600>,
 			<1536000>,
 			<1804800>,
