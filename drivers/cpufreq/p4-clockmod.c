@@ -257,7 +257,7 @@ static int __init cpufreq_p4_init(void)
 
 	ret = cpufreq_register_driver(&p4clockmod_driver);
 	if (!ret)
-		pr_info("P4/Xeon(TM) CPU On-Demand Clock Modulation available\n");
+		pr_debug("P4/Xeon(TM) CPU On-Demand Clock Modulation available\n");
 
 	return ret;
 }

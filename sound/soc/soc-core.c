@@ -626,8 +626,8 @@ static struct snd_soc_pcm_runtime *soc_new_pcm_runtime(
 	INIT_LIST_HEAD(&rtd->component_list);
 	rtd->card = card;
 	rtd->dai_link = dai_link;
-	rtd->codec_dais = kzalloc(sizeof(struct snd_soc_dai *) *
-					dai_link->num_codecs,
+	rtd->codec_dais = kcalloc(dai_link->num_codecs,
+					sizeof(struct snd_soc_dai *),
 					GFP_KERNEL);
 	if (!rtd->codec_dais) {
 		kfree(rtd);
@@ -4094,7 +4094,7 @@ int snd_soc_of_parse_audio_routing(struct snd_soc_card *card,
 		return -EINVAL;
 	}
 
-	routes = devm_kzalloc(card->dev, num_routes * sizeof(*routes),
+	routes = devm_kcalloc(card->dev, num_routes, sizeof(*routes),
 			      GFP_KERNEL);
 	if (!routes) {
 		dev_err(card->dev,
@@ -4446,8 +4446,8 @@ int snd_soc_of_get_dai_link_codecs(struct device *dev,
 			dev_err(dev, "Bad phandle in 'sound-dai'\n");
 		return num_codecs;
 	}
-	component = devm_kzalloc(dev,
-				 sizeof *component * num_codecs,
+	component = devm_kcalloc(dev,
+				 num_codecs, sizeof(*component),
 				 GFP_KERNEL);
 	if (!component)
 		return -ENOMEM;

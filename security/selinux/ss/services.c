@@ -2139,7 +2139,7 @@ int security_load_policy(struct selinux_state *state, void *data, size_t len)
 	int rc = 0;
 	struct policy_file file = { data, len }, *fp = &file;
 
-	oldpolicydb = kzalloc(2 * sizeof(*oldpolicydb), GFP_KERNEL);
+	oldpolicydb = kcalloc(2, sizeof(*oldpolicydb), GFP_KERNEL);
 	if (!oldpolicydb) {
 		rc = -ENOMEM;
 		goto out;
@@ -3535,6 +3535,7 @@ out:
 	return match;
 }
 
+#ifdef CONFIG_AUDIT
 static int (*aurule_callback)(void) = audit_update_lsm_rules;
 
 static int aurule_avc_callback(u32 event)
@@ -3557,6 +3558,7 @@ static int __init aurule_init(void)
 	return err;
 }
 __initcall(aurule_init);
+#endif
 
 #ifdef CONFIG_NETLABEL
 /**

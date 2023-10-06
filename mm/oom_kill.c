@@ -622,8 +622,7 @@ void wake_oom_reaper(struct task_struct *tsk)
 
 static int __init oom_init(void)
 {
-	oom_reaper_th = kthread_run_perf_critical(cpu_lp_mask, oom_reaper,
-					NULL, "oom_reaper");
+	oom_reaper_th = kthread_run(oom_reaper, NULL, "oom_reaper");
 	if (IS_ERR(oom_reaper_th)) {
 		pr_err("Unable to start OOM reaper %ld. Continuing regardless\n",
 				PTR_ERR(oom_reaper_th));
@@ -1004,7 +1003,7 @@ bool out_of_memory(struct oom_control *oc)
 	unsigned long freed = 0;
 	enum oom_constraint constraint = CONSTRAINT_NONE;
 
-	if (oom_killer_disabled || IS_ENABLED(CONFIG_ANDROID_SIMPLE_LMK))
+	if (oom_killer_disabled)
 		return false;
 
 	if (try_online_one_block(numa_node_id())) {

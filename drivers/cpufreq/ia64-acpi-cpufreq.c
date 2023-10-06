@@ -241,8 +241,8 @@ acpi_cpufreq_cpu_init (
 	}
 
 	/* alloc freq_table */
-	freq_table = kzalloc(sizeof(*freq_table) *
-	                           (data->acpi_data.state_count + 1),
+	freq_table = kcalloc(data->acpi_data.state_count + 1,
+	                           sizeof(*freq_table),
 	                           GFP_KERNEL);
 	if (!freq_table) {
 		result = -ENOMEM;
@@ -278,7 +278,7 @@ acpi_cpufreq_cpu_init (
 	/* notify BIOS that we exist */
 	acpi_processor_notify_smm(THIS_MODULE);
 
-	pr_info("CPU%u - ACPI performance management activated\n", cpu);
+	pr_debug("CPU%u - ACPI performance management activated\n", cpu);
 
 	for (i = 0; i < data->acpi_data.state_count; i++)
 		pr_debug("     %cP%d: %d MHz, %d mW, %d uS, %d uS, 0x%x 0x%x\n",

@@ -679,8 +679,9 @@ static void ufshcd_cmd_log_init(struct ufs_hba *hba)
 {
 	/* Allocate log entries */
 	if (!hba->cmd_log.entries) {
-		hba->cmd_log.entries = kzalloc(UFSHCD_MAX_CMD_LOGGING *
-			sizeof(struct ufshcd_cmd_log_entry), GFP_KERNEL);
+		hba->cmd_log.entries = kcalloc(UFSHCD_MAX_CMD_LOGGING,
+					       sizeof(struct ufshcd_cmd_log_entry),
+					       GFP_KERNEL);
 		if (!hba->cmd_log.entries)
 			return;
 		dev_dbg(hba->dev, "%s: cmd_log.entries initialized\n",
@@ -4797,8 +4798,8 @@ static int ufshcd_memory_alloc(struct ufs_hba *hba)
 	}
 
 	/* Allocate memory for local reference block */
-	hba->lrb = devm_kzalloc(hba->dev,
-				hba->nutrs * sizeof(struct ufshcd_lrb),
+	hba->lrb = devm_kcalloc(hba->dev,
+				hba->nutrs, sizeof(struct ufshcd_lrb),
 				GFP_KERNEL);
 	if (!hba->lrb) {
 		dev_err(hba->dev, "LRB Memory allocation failed\n");

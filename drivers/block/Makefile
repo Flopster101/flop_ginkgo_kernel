@@ -6,9 +6,6 @@
 # Rewritten to use lists instead of if-statements.
 # 
 
-ccflags-y += -mllvm -inline-threshold=15000
-ccflags-y += -mllvm -inlinehint-threshold=10000
-
 obj-$(CONFIG_MAC_FLOPPY)	+= swim3.o
 obj-$(CONFIG_BLK_DEV_SWIM)	+= swim_mod.o
 obj-$(CONFIG_BLK_DEV_FD)	+= floppy.o
@@ -41,7 +38,6 @@ obj-$(CONFIG_BLK_DEV_PCIESSD_MTIP32XX)	+= mtip32xx/
 obj-$(CONFIG_BLK_DEV_RSXX) += rsxx/
 obj-$(CONFIG_BLK_DEV_NULL_BLK)	+= null_blk.o
 obj-$(CONFIG_ZRAM) += zram/
-obj-$(CONFIG_VBSWAP) += vbswap/
 
 skd-y		:= skd_main.o
 swim_mod-y	:= swim.o swim_asm.o

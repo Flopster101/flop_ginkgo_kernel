@@ -18,6 +18,7 @@
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
 #include <linux/pwm.h>
+#include <linux/overflow.h>
 #include <video/mipi_display.h>
 
 #include "dsi_panel.h"
@@ -3171,7 +3172,7 @@ int dsi_panel_parse_esd_reg_read_configs(struct dsi_panel *panel)
 	}
 
 	esd_config->status_value =
-		kzalloc(sizeof(u32) * status_len * esd_config->groups,
+		kzalloc(array3_size(sizeof(u32), status_len, esd_config->groups),
 			GFP_KERNEL);
 	if (!esd_config->status_value) {
 		rc = -ENOMEM;

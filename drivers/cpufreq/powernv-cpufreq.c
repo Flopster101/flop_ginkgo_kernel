@@ -260,9 +260,9 @@ static int init_powernv_pstates(void)
 		powernv_pstate_info.wof_enabled = true;
 
 next:
-	pr_info("cpufreq pstate min %d nominal %d max %d\n", pstate_min,
+	pr_debug("cpufreq pstate min %d nominal %d max %d\n", pstate_min,
 		pstate_nominal, pstate_max);
-	pr_info("Workload Optimized Frequency is %s in the platform\n",
+	pr_debug("Workload Optimized Frequency is %s in the platform\n",
 		(powernv_pstate_info.wof_enabled) ? "enabled" : "disabled");
 
 	pstate_ids = of_get_property(power_mgt, "ibm,pstate-ids", &len_ids);
@@ -559,17 +559,17 @@ static void powernv_cpufreq_throttle_check(void *data)
 next:
 	if (pmsr & PMSR_PSAFE_ENABLE) {
 		throttled = true;
-		pr_info("Pstate set to safe frequency\n");
+		pr_debug("Pstate set to safe frequency\n");
 	}
 
 	/* Check if SPR_EM_DISABLE is set in PMSR */
 	if (pmsr & PMSR_SPR_EM_DISABLE) {
 		throttled = true;
-		pr_info("Frequency Control disabled from OS\n");
+		pr_debug("Frequency Control disabled from OS\n");
 	}
 
 	if (throttled) {
-		pr_info("PMSR = %16lx\n", pmsr);
+		pr_debug("PMSR = %16lx\n", pmsr);
 		pr_warn("CPU Frequency could be throttled\n");
 	}
 }
@@ -803,7 +803,7 @@ static int powernv_cpufreq_cpu_init(struct cpufreq_policy *policy)
 
 		ret = sysfs_create_group(&policy->kobj, &throttle_attr_grp);
 		if (ret) {
-			pr_info("Failed to create throttle stats directory for cpu %d\n",
+			pr_debug("Failed to create throttle stats directory for cpu %d\n",
 				policy->cpu);
 			return ret;
 		}
@@ -911,7 +911,7 @@ static int powernv_cpufreq_occ_msg(struct notifier_block *nb,
 	switch (omsg.type) {
 	case OCC_RESET:
 		occ_reset = true;
-		pr_info("OCC (On Chip Controller - enforces hard thermal/power limits) Resetting\n");
+		pr_debug("OCC (On Chip Controller - enforces hard thermal/power limits) Resetting\n");
 		/*
 		 * powernv_cpufreq_throttle_check() is called in
 		 * target() callback which can detect the throttle state
@@ -926,7 +926,7 @@ static int powernv_cpufreq_occ_msg(struct notifier_block *nb,
 
 		break;
 	case OCC_LOAD:
-		pr_info("OCC Loading, CPU frequency is throttled until OCC is started\n");
+		pr_debug("OCC Loading, CPU frequency is throttled until OCC is started\n");
 		break;
 	case OCC_THROTTLE:
 		omsg.chip = be64_to_cpu(msg->params[1]);
@@ -935,7 +935,7 @@ static int powernv_cpufreq_occ_msg(struct notifier_block *nb,
 		if (occ_reset) {
 			occ_reset = false;
 			throttled = false;
-			pr_info("OCC Active, CPU frequency is no longer throttled\n");
+			pr_debug("OCC Active, CPU frequency is no longer throttled\n");
 
 			for (i = 0; i < nr_chips; i++) {
 				chips[i].restore = true;
@@ -1103,7 +1103,7 @@ static int __init powernv_cpufreq_init(void)
 
 	rc = cpufreq_register_driver(&powernv_cpufreq_driver);
 	if (rc) {
-		pr_info("Failed to register the cpufreq driver (%d)\n", rc);
+		pr_debug("Failed to register the cpufreq driver (%d)\n", rc);
 		goto cleanup_notifiers;
 	}
 
@@ -1115,7 +1115,7 @@ cleanup_notifiers:
 	unregister_all_notifiers();
 	clean_chip_info();
 out:
-	pr_info("Platform driver disabled. System does not support PState control\n");
+	pr_debug("Platform driver disabled. System does not support PState control\n");
 	return rc;
 }
 module_init(powernv_cpufreq_init);

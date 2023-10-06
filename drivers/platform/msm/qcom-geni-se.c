@@ -1289,8 +1289,9 @@ int geni_se_clk_tbl_get(struct se_geni_rsc *rsc, unsigned long **tbl)
 		goto exit_se_clk_tbl_get;
 	}
 
-	geni_se_dev->clk_perf_tbl = kzalloc(sizeof(*geni_se_dev->clk_perf_tbl) *
-						MAX_CLK_PERF_LEVEL, GFP_KERNEL);
+	geni_se_dev->clk_perf_tbl = kcalloc(MAX_CLK_PERF_LEVEL,
+					    sizeof(*geni_se_dev->clk_perf_tbl),
+					    GFP_KERNEL);
 	if (!geni_se_dev->clk_perf_tbl) {
 		ret = -ENOMEM;
 		goto exit_se_clk_tbl_get;
@@ -1857,8 +1858,10 @@ static struct msm_bus_scale_pdata *ab_ib_register(struct platform_device *pdev,
 
 	for (i = 0; i < pdata->num_usecases; i++) {
 		usecase[i].num_paths = host->num_paths;
-		usecase[i].vectors = devm_kzalloc(dev, host->num_paths *
-			sizeof(struct msm_bus_vectors), GFP_KERNEL);
+		usecase[i].vectors = devm_kcalloc(dev,
+						  host->num_paths,
+						  sizeof(struct msm_bus_vectors),
+						  GFP_KERNEL);
 		if (!usecase[i].vectors) {
 			mem_err = true;
 			pr_err("Error: Mem alloc failure in vectors\n");

@@ -368,7 +368,7 @@ static int read_page(struct file *file, unsigned long index,
 	pr_debug("read bitmap file (%dB @ %llu)\n", (int)PAGE_SIZE,
 		 (unsigned long long)index << PAGE_SHIFT);
 
-	bh = alloc_page_buffers(page, 1<<inode->i_blkbits, false);
+	bh = alloc_page_buffers(page, 1<<inode->i_blkbits, 0);
 	if (!bh) {
 		ret = -ENOMEM;
 		goto out;
@@ -2113,7 +2113,7 @@ int bitmap_resize(struct bitmap *bitmap, sector_t blocks,
 
 	pages = DIV_ROUND_UP(chunks, PAGE_COUNTER_RATIO);
 
-	new_bp = kzalloc(pages * sizeof(*new_bp), GFP_KERNEL);
+	new_bp = kcalloc(pages, sizeof(*new_bp), GFP_KERNEL);
 	ret = -ENOMEM;
 	if (!new_bp) {
 		bitmap_file_unmap(&store);

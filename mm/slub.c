@@ -281,7 +281,7 @@ static inline void *get_freepointer(struct kmem_cache *s, void *object)
 
 static void prefetch_freepointer(const struct kmem_cache *s, void *object)
 {
-	prefetch(object + s->offset);
+	prefetchw(object + s->offset);
 }
 
 static inline void *get_freepointer_safe(struct kmem_cache *s, void *object)
@@ -1403,7 +1403,6 @@ static bool freelist_corrupted(struct kmem_cache *s, struct page *page,
 static inline void *kmalloc_large_node_hook(void *ptr, size_t size, gfp_t flags)
 {
 	ptr = kasan_kmalloc_large(ptr, size, flags);
-	/* As ptr might get tagged, call kmemleak hook after KASAN. */
 	kmemleak_alloc(ptr, size, 1, flags);
 	return ptr;
 }
@@ -3779,8 +3778,9 @@ static void list_slab_objects(struct kmem_cache *s, struct page *page,
 #ifdef CONFIG_SLUB_DEBUG
 	void *addr = page_address(page);
 	void *p;
-	unsigned long *map = kzalloc(BITS_TO_LONGS(page->objects) *
-				     sizeof(long), GFP_ATOMIC);
+	unsigned long *map = kcalloc(BITS_TO_LONGS(page->objects),
+				     sizeof(long),
+				     GFP_ATOMIC);
 	if (!map)
 		return;
 	slab_err(s, page, text, s->name);
@@ -4900,7 +4900,7 @@ static ssize_t show_slab_objects(struct kmem_cache *s,
 	int x;
 	unsigned long *nodes;
 
-	nodes = kzalloc(sizeof(unsigned long) * nr_node_ids, GFP_KERNEL);
+	nodes = kcalloc(nr_node_ids, sizeof(unsigned long), GFP_KERNEL);
 	if (!nodes)
 		return -ENOMEM;
 

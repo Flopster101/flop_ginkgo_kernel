@@ -78,8 +78,6 @@
 #include <asm/div64.h>
 #include "internal.h"
 
-atomic_long_t kswapd_waiters = ATOMIC_LONG_INIT(0);
-
 /* prevent >1 _updater_ of zone percpu pageset ->high and ->batch fields */
 static DEFINE_MUTEX(pcp_batch_high_lock);
 #define MIN_PERCPU_PAGELIST_FRACTION	(8)
@@ -1671,8 +1669,7 @@ void __init page_alloc_init_late(void)
 	/* There will be num_node_state(N_MEMORY) threads */
 	atomic_set(&pgdat_init_n_undone, num_node_state(N_MEMORY));
 	for_each_node_state(nid, N_MEMORY) {
-		kthread_run_perf_critical(cpu_lp_mask, deferred_init_memmap,
-				NODE_DATA(nid), "pgdatinit%d", nid);
+		kthread_run(deferred_init_memmap, NODE_DATA(nid), "pgdatinit%d", nid);
 	}
 
 	/* Block until all are initialised */
@@ -3868,18 +3865,16 @@ retry:
 	return page;
 }
 
-static void wake_all_kswapds(unsigned int order, gfp_t gfp_mask,
-			     const struct alloc_context *ac)
+static void wake_all_kswapds(unsigned int order, const struct alloc_context *ac)
 {
 	struct zoneref *z;
 	struct zone *zone;
 	pg_data_t *last_pgdat = NULL;
-	enum zone_type high_zoneidx = ac->high_zoneidx;
 
-	for_each_zone_zonelist_nodemask(zone, z, ac->zonelist, high_zoneidx,
-					ac->nodemask) {
+	for_each_zone_zonelist_nodemask(zone, z, ac->zonelist,
+					ac->high_zoneidx, ac->nodemask) {
 		if (last_pgdat != zone->zone_pgdat)
-			wakeup_kswapd(zone, gfp_mask, order, high_zoneidx);
+			wakeup_kswapd(zone, order, ac->high_zoneidx);
 		last_pgdat = zone->zone_pgdat;
 	}
 }
@@ -4120,8 +4115,6 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	unsigned int cpuset_mems_cookie;
 	unsigned int zonelist_iter_cookie;
 	int reserve_flags;
-	bool woke_kswapd = false;
-	bool used_vmpressure = false;
 
 	/*
 	 * We also sanity check to catch abuse of atomic reserves being used by
@@ -4156,15 +4149,8 @@ restart:
 	if (!ac->preferred_zoneref->zone)
 		goto nopage;
 
-	if (gfp_mask & __GFP_KSWAPD_RECLAIM) {
-		if (!woke_kswapd) {
-			atomic_long_inc(&kswapd_waiters);
-			woke_kswapd = true;
-		}
-		if (!used_vmpressure)
-			used_vmpressure = vmpressure_inc_users(order);
-		wake_all_kswapds(order, gfp_mask, ac);
-	}
+	if (gfp_mask & __GFP_KSWAPD_RECLAIM)
+		wake_all_kswapds(order, ac);
 
 	/*
 	 * The adjusted alloc_flags might result in immediate success, so try
@@ -4222,7 +4208,7 @@ restart:
 retry:
 	/* Ensure kswapd doesn't accidentally go to sleep as long as we loop */
 	if (gfp_mask & __GFP_KSWAPD_RECLAIM)
-		wake_all_kswapds(order, gfp_mask, ac);
+		wake_all_kswapds(order, ac);
 
 	reserve_flags = __gfp_pfmemalloc_flags(gfp_mask);
 	if (reserve_flags)
@@ -4256,8 +4242,6 @@ retry:
 		goto nopage;
 
 	/* Try direct reclaim and then allocating */
-	if (!used_vmpressure)
-		used_vmpressure = vmpressure_inc_users(order);
 	page = __alloc_pages_direct_reclaim(gfp_mask, order, alloc_flags, ac,
 							&did_some_progress);
 	if (page)
@@ -4316,10 +4300,8 @@ retry:
 	/* Avoid allocations with no watermarks from looping endlessly */
 	if (tsk_is_oom_victim(current) &&
 	    (alloc_flags == ALLOC_OOM ||
-	     (gfp_mask & __GFP_NOMEMALLOC))) {
-		gfp_mask |= __GFP_NOWARN;
+	     (gfp_mask & __GFP_NOMEMALLOC)))
 		goto nopage;
-	}
 
 	/* Retry as long as the OOM killer is making progress */
 	if (did_some_progress) {
@@ -4377,14 +4359,9 @@ nopage:
 		goto retry;
 	}
 fail:
+	warn_alloc(gfp_mask, ac->nodemask,
+			"page allocation failure: order:%u", order);
 got_pg:
-	if (woke_kswapd)
-		atomic_long_dec(&kswapd_waiters);
-	if (used_vmpressure)
-		vmpressure_dec_users();
-	if (!page)
-		warn_alloc(gfp_mask, ac->nodemask,
-				"page allocation failure: order:%u", order);
 	return page;
 }
 

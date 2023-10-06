@@ -1099,7 +1099,7 @@ static void intel_pstate_disable_ee(int cpu)
 		return;
 
 	if (!(power_ctl & BIT(MSR_IA32_POWER_CTL_BIT_EE))) {
-		pr_info("Disabling energy efficiency optimization\n");
+		pr_debug("Disabling energy efficiency optimization\n");
 		power_ctl |= BIT(MSR_IA32_POWER_CTL_BIT_EE);
 		wrmsrl_on_cpu(cpu, MSR_IA32_POWER_CTL, power_ctl);
 	}
@@ -2343,7 +2343,7 @@ hwp_cpu_matched:
 	if (!hwp_active && hwp_only)
 		return -ENOTSUPP;
 
-	pr_info("Intel P-state driver initializing\n");
+	pr_debug("Intel P-state driver initializing\n");
 
 	all_cpu_data = vzalloc(sizeof(void *) * num_possible_cpus());
 	if (!all_cpu_data)
@@ -2360,7 +2360,7 @@ hwp_cpu_matched:
 		return rc;
 
 	if (hwp_active)
-		pr_info("HWP enabled\n");
+		pr_debug("HWP enabled\n");
 
 	return 0;
 }
@@ -2374,12 +2374,12 @@ static int __init intel_pstate_setup(char *str)
 	if (!strcmp(str, "disable")) {
 		no_load = 1;
 	} else if (!strcmp(str, "passive")) {
-		pr_info("Passive mode enabled\n");
+		pr_debug("Passive mode enabled\n");
 		default_driver = &intel_cpufreq;
 		no_hwp = 1;
 	}
 	if (!strcmp(str, "no_hwp")) {
-		pr_info("HWP disabled\n");
+		pr_debug("HWP disabled\n");
 		no_hwp = 1;
 	}
 	if (!strcmp(str, "force"))

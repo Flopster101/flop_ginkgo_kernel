@@ -457,7 +457,7 @@ int cpufreq_dbs_governor_init(struct cpufreq_policy *policy)
 		goto out;
 
 	/* Failure, so roll back. */
-	pr_err("initialization failed (dbs_data kobject init error %d)\n", ret);
+	pr_debug("initialization failed (dbs_data kobject init error %d)\n", ret);
 
 	kobject_put(&dbs_data->attr_set.kobj);
 

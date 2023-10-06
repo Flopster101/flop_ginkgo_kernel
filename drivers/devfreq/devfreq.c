@@ -26,6 +26,7 @@
 #include <linux/printk.h>
 #include <linux/hrtimer.h>
 #include <linux/of.h>
+#include <linux/overflow.h>
 #include "governor.h"
 
 static struct class *devfreq_class;
@@ -524,6 +525,7 @@ static void devfreq_dev_release(struct device *dev)
 
 	mutex_destroy(&devfreq->lock);
 	mutex_destroy(&devfreq->event_lock);
+	srcu_cleanup_notifier_head(&devfreq->transition_notifier_list);
 	kfree(devfreq);
 }
 
@@ -595,13 +597,11 @@ struct devfreq *devfreq_add_device(struct device *dev,
 	}
 
 	devfreq->trans_table =	devm_kzalloc(&devfreq->dev,
-						sizeof(unsigned int) *
-						devfreq->profile->max_state *
-						devfreq->profile->max_state,
+						array3_size(sizeof(unsigned int), devfreq->profile->max_state, devfreq->profile->max_state),
 						GFP_KERNEL);
-	devfreq->time_in_state = devm_kzalloc(&devfreq->dev,
-						sizeof(unsigned long) *
+	devfreq->time_in_state = devm_kcalloc(&devfreq->dev,
 						devfreq->profile->max_state,
+						sizeof(unsigned long),
 						GFP_KERNEL);
 	devfreq->last_stat_updated = jiffies;
 

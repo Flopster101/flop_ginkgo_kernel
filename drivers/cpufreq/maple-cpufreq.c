@@ -176,7 +176,7 @@ static int __init maple_cpufreq_init(void)
 	/* Get first CPU node */
 	cpunode = of_cpu_device_node_get(0);
 	if (cpunode == NULL) {
-		pr_err("Can't find any CPU 0 node\n");
+		pr_debug("Can't find any CPU 0 node\n");
 		goto bail_noprops;
 	}
 
@@ -184,7 +184,7 @@ static int __init maple_cpufreq_init(void)
 	/* we actually don't care on which CPU to access PVR */
 	pvr_hi = PVR_VER(mfspr(SPRN_PVR));
 	if (pvr_hi != 0x3c && pvr_hi != 0x44) {
-		pr_err("Unsupported CPU version (%x)\n", pvr_hi);
+		pr_debug("Unsupported CPU version (%x)\n", pvr_hi);
 		goto bail_noprops;
 	}
 
@@ -223,8 +223,8 @@ static int __init maple_cpufreq_init(void)
 	maple_pmode_cur = -1;
 	maple_scom_switch_freq(maple_scom_query_freq());
 
-	pr_info("Registering Maple CPU frequency driver\n");
-	pr_info("Low: %d Mhz, High: %d Mhz, Cur: %d MHz\n",
+	pr_debug("Registering Maple CPU frequency driver\n");
+	pr_debug("Low: %d Mhz, High: %d Mhz, Cur: %d MHz\n",
 		maple_cpu_freqs[1].frequency/1000,
 		maple_cpu_freqs[0].frequency/1000,
 		maple_cpu_freqs[maple_pmode_cur].frequency/1000);

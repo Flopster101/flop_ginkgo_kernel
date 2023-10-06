@@ -500,7 +500,7 @@ static int dib7000p_update_pll(struct dvb_frontend *fe, struct dibx000_bandwidth
 	prediv = reg_1856 & 0x3f;
 	loopdiv = (reg_1856 >> 6) & 0x3f;
 
-	if ((bw != NULL) && (bw->pll_prediv != prediv || bw->pll_ratio != loopdiv)) {
+	if (loopdiv && bw && (bw->pll_prediv != prediv || bw->pll_ratio != loopdiv)) {
 		dprintk("Updating pll (prediv: old =  %d new = %d ; loopdiv : old = %d new = %d)\n", prediv, bw->pll_prediv, loopdiv, bw->pll_ratio);
 		reg_1856 &= 0xf000;
 		reg_1857 = dib7000p_read_word(state, 1857);
@@ -2018,10 +2018,10 @@ static int dib7000pc_detection(struct i2c_adapter *i2c_adap)
 	};
 	int ret = 0;
 
-	tx = kzalloc(2*sizeof(u8), GFP_KERNEL);
+	tx = kzalloc(2, GFP_KERNEL);
 	if (!tx)
 		return -ENOMEM;
-	rx = kzalloc(2*sizeof(u8), GFP_KERNEL);
+	rx = kzalloc(2, GFP_KERNEL);
 	if (!rx) {
 		ret = -ENOMEM;
 		goto rx_memory_error;
@@ -2818,7 +2818,7 @@ void *dib7000p_attach(struct dib7000p_ops *ops)
 
 	return ops;
 }
-EXPORT_SYMBOL(dib7000p_attach);
+EXPORT_SYMBOL_GPL(dib7000p_attach);
 
 static const struct dvb_frontend_ops dib7000p_ops = {
 	.delsys = { SYS_DVBT },

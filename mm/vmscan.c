@@ -155,9 +155,9 @@ struct scan_control {
 #endif
 
 /*
- * From 0 .. 100.  Higher means more swappy.
+ * From 0 .. 200.  Higher means more swappy.
  */
-int vm_swappiness = 60;
+int vm_swappiness = 80;
 /*
  * The total number of pages which are beyond the high watermark within all
  * zones.
@@ -2783,7 +2783,7 @@ static bool shrink_node(pg_data_t *pgdat, struct scan_control *sc)
 			/* Record the group's reclaim efficiency */
 			vmpressure(sc->gfp_mask, memcg, false,
 				   sc->nr_scanned - scanned,
-				   sc->nr_reclaimed - reclaimed, sc->order);
+				   sc->nr_reclaimed - reclaimed);
 
 			/*
 			 * Direct reclaim and kswapd have to scan all memory
@@ -2816,7 +2816,7 @@ static bool shrink_node(pg_data_t *pgdat, struct scan_control *sc)
 		 */
 		vmpressure(sc->gfp_mask, sc->target_mem_cgroup, true,
 			   sc->nr_scanned - nr_scanned,
-			   sc->nr_reclaimed - nr_reclaimed, sc->order);
+			   sc->nr_reclaimed - nr_reclaimed);
 
 		if (reclaim_state) {
 			sc->nr_reclaimed += reclaim_state->reclaimed_slab;
@@ -3012,7 +3012,7 @@ retry:
 
 	do {
 		vmpressure_prio(sc->gfp_mask, sc->target_mem_cgroup,
-				sc->priority, sc->order);
+				sc->priority);
 		sc->nr_scanned = 0;
 		shrink_zones(zonelist, sc);
 
@@ -3059,7 +3059,7 @@ retry:
 	return 0;
 }
 
-static bool allow_direct_reclaim(pg_data_t *pgdat, bool using_kswapd)
+static bool allow_direct_reclaim(pg_data_t *pgdat)
 {
 	struct zone *zone;
 	unsigned long pfmemalloc_reserve = 0;
@@ -3087,10 +3087,6 @@ static bool allow_direct_reclaim(pg_data_t *pgdat, bool using_kswapd)
 		return true;
 
 	wmark_ok = free_pages > pfmemalloc_reserve / 2;
-
-	/* The throttled direct reclaimer is now a kswapd waiter */
-	if (unlikely(!using_kswapd && !wmark_ok))
-		atomic_long_inc(&kswapd_waiters);
 
 	/* kswapd must be awake if processes are being throttled */
 	if (!wmark_ok && waitqueue_active(&pgdat->kswapd_wait)) {
@@ -3157,7 +3153,7 @@ static bool throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 
 		/* Throttle based on the first usable node */
 		pgdat = zone->zone_pgdat;
-		if (allow_direct_reclaim(pgdat, gfp_mask & __GFP_KSWAPD_RECLAIM))
+		if (allow_direct_reclaim(pgdat))
 			goto out;
 		break;
 	}
@@ -3179,18 +3175,16 @@ static bool throttle_direct_reclaim(gfp_t gfp_mask, struct zonelist *zonelist,
 	 */
 	if (!(gfp_mask & __GFP_FS)) {
 		wait_event_interruptible_timeout(pgdat->pfmemalloc_wait,
-			allow_direct_reclaim(pgdat, true), HZ);
+			allow_direct_reclaim(pgdat), HZ);
 
 		goto check_pending;
 	}
 
 	/* Throttle until kswapd wakes the process */
 	wait_event_killable(zone->zone_pgdat->pfmemalloc_wait,
-		allow_direct_reclaim(pgdat, true));
+		allow_direct_reclaim(pgdat));
 
 check_pending:
-	if (unlikely(!(gfp_mask & __GFP_KSWAPD_RECLAIM)))
-		atomic_long_dec(&kswapd_waiters);
 	if (fatal_signal_pending(current))
 		return true;
 
@@ -3565,12 +3559,11 @@ static int balance_pgdat(pg_data_t *pgdat, int order, int classzone_idx)
 		 * able to safely make forward progress. Wake them
 		 */
 		if (waitqueue_active(&pgdat->pfmemalloc_wait) &&
-				allow_direct_reclaim(pgdat, true))
+				allow_direct_reclaim(pgdat))
 			wake_up_all(&pgdat->pfmemalloc_wait);
 
 		/* Check if kswapd should be suspending */
-		if (try_to_freeze() || kthread_should_stop() ||
-		    !atomic_long_read(&kswapd_waiters))
+		if (try_to_freeze() || kthread_should_stop())
 			break;
 
 		/*
@@ -3792,14 +3785,9 @@ kswapd_try_sleep:
 }
 
 /*
- * A zone is low on free memory or too fragmented for high-order memory.  If
- * kswapd should reclaim (direct reclaim is deferred), wake it up for the zone's
- * pgdat.  It will wake up kcompactd after reclaiming memory.  If kswapd reclaim
- * has failed or is not needed, still wake up kcompactd if only compaction is
- * needed.
+ * A zone is low on free memory, so wake its kswapd task to service it.
  */
-void wakeup_kswapd(struct zone *zone, gfp_t gfp_flags, int order,
-		   enum zone_type classzone_idx)
+void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 {
 	pg_data_t *pgdat;
 	enum zone_type curr_idx;
@@ -3807,7 +3795,7 @@ void wakeup_kswapd(struct zone *zone, gfp_t gfp_flags, int order,
 	if (!managed_zone(zone))
 		return;
 
-	if (!cpuset_zone_allowed(zone, gfp_flags))
+	if (!cpuset_zone_allowed(zone, GFP_KERNEL | __GFP_HARDWALL))
 		return;
 
 	pgdat = zone->zone_pgdat;
@@ -3822,23 +3810,14 @@ void wakeup_kswapd(struct zone *zone, gfp_t gfp_flags, int order,
 	if (!waitqueue_active(&pgdat->kswapd_wait))
 		return;
 
-	/* Hopeless node, leave it to direct reclaim if possible */
-	if (pgdat->kswapd_failures >= MAX_RECLAIM_RETRIES ||
-	    pgdat_balanced(pgdat, order, classzone_idx)) {
-		/*
-		 * There may be plenty of free memory available, but it's too
-		 * fragmented for high-order allocations.  Wake up kcompactd
-		 * and rely on compaction_suitable() to determine if it's
-		 * needed.  If it fails, it will defer subsequent attempts to
-		 * ratelimit its work.
-		 */
-		if (!(gfp_flags & __GFP_DIRECT_RECLAIM))
-			wakeup_kcompactd(pgdat, order, classzone_idx);
+	/* Hopeless node, leave it to direct reclaim */
+	if (pgdat->kswapd_failures >= MAX_RECLAIM_RETRIES)
 		return;
-	}
 
-	trace_mm_vmscan_wakeup_kswapd(pgdat->node_id, classzone_idx, order,
-				      gfp_flags);
+	if (pgdat_balanced(pgdat, order, classzone_idx))
+		return;
+
+	trace_mm_vmscan_wakeup_kswapd(pgdat->node_id, classzone_idx, order);
 	wake_up_interruptible(&pgdat->kswapd_wait);
 }
 
@@ -3917,8 +3896,7 @@ int kswapd_run(int nid)
 	if (pgdat->kswapd)
 		return 0;
 
-	pgdat->kswapd = kthread_run_perf_critical(cpu_lp_mask, kswapd,
-					pgdat, "kswapd%d", nid);
+	pgdat->kswapd = kthread_run(kswapd, pgdat, "kswapd%d", nid);
 	if (IS_ERR(pgdat->kswapd)) {
 		/* failure at boot is fatal */
 		BUG_ON(system_state < SYSTEM_RUNNING);

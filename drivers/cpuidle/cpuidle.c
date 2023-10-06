@@ -37,24 +37,6 @@ static int enabled_devices;
 static int off __read_mostly;
 static int initialized __read_mostly;
 
-#ifdef CONFIG_SMP
-static atomic_t idled = ATOMIC_INIT(0);
-
-#if NR_CPUS > 32
-#error idled CPU mask not big enough for NR_CPUS
-#endif
-
-void cpuidle_set_idle_cpu(unsigned int cpu)
-{
-	atomic_or(BIT(cpu), &idled);
-}
-
-void cpuidle_clear_idle_cpu(unsigned int cpu)
-{
-	atomic_andnot(BIT(cpu), &idled);
-}
-#endif
-
 int cpuidle_disabled(void)
 {
 	return off;
@@ -283,18 +265,13 @@ int cpuidle_enter_state(struct cpuidle_device *dev, struct cpuidle_driver *drv,
  *
  * @drv: the cpuidle driver
  * @dev: the cpuidle device
- * @stop_tick: indication on whether or not to stop the tick
  *
  * Returns the index of the idle state.  The return value must not be negative.
  *
- * The memory location pointed to by @stop_tick is expected to be written the
- * 'false' boolean value if the scheduler tick should not be stopped before
- * entering the returned state.
  */
-int cpuidle_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
-		   bool *stop_tick)
+int cpuidle_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 {
-	return cpuidle_curr_governor->select(drv, dev, stop_tick);
+	return cpuidle_curr_governor->select(drv, dev);
 }
 
 /**
@@ -672,13 +649,6 @@ EXPORT_SYMBOL_GPL(cpuidle_register);
 static int cpuidle_latency_notify(struct notifier_block *b,
 		unsigned long l, void *v)
 {
-	unsigned long cpus = atomic_read(&idled) & *cpumask_bits(to_cpumask(v));
-
-	/* Use READ_ONCE to get the isolated mask outside cpu_add_remove_lock */
-	cpus &= ~READ_ONCE(*cpumask_bits(cpu_isolated_mask));
-	if (cpus)
-		arch_send_wakeup_ipi_mask(to_cpumask(&cpus));
-
 	return NOTIFY_OK;
 }
 

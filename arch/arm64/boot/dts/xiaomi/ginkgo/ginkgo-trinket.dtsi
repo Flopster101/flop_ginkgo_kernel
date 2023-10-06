@@ -1,5 +1,4 @@
 #include "../qcom-base/trinket-idp.dtsi"
-#include "../qcom-base/pmi632.dtsi"
 #include "ginkgo-trinket-audio.dtsi"
 #include "ginkgo-trinket-battery.dtsi"
 #include "ginkgo-trinket-camera.dtsi"

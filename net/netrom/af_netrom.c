@@ -663,6 +663,11 @@ static int nr_connect(struct socket *sock, struct sockaddr *uaddr,
 		goto out_release;
 	}
 
+	if (sock->state == SS_CONNECTING) {
+		err = -EALREADY;
+		goto out_release;
+	}
+
 	sk->sk_state   = TCP_CLOSE;
 	sock->state = SS_UNCONNECTED;
 
@@ -1419,7 +1424,7 @@ static int __init nr_proto_init(void)
 		return -1;
 	}
 
-	dev_nr = kzalloc(nr_ndevs * sizeof(struct net_device *), GFP_KERNEL);
+	dev_nr = kcalloc(nr_ndevs, sizeof(struct net_device *), GFP_KERNEL);
 	if (dev_nr == NULL) {
 		printk(KERN_ERR "NET/ROM: nr_proto_init - unable to allocate device array\n");
 		return -1;

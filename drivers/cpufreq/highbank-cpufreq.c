@@ -72,26 +72,26 @@ static int hb_cpufreq_driver_init(void)
 
 	cpu_dev = get_cpu_device(0);
 	if (!cpu_dev) {
-		pr_err("failed to get highbank cpufreq device\n");
+		pr_debug("failed to get highbank cpufreq device\n");
 		return -ENODEV;
 	}
 
 	np = of_node_get(cpu_dev->of_node);
 	if (!np) {
-		pr_err("failed to find highbank cpufreq node\n");
+		pr_debug("failed to find highbank cpufreq node\n");
 		return -ENOENT;
 	}
 
 	cpu_clk = clk_get(cpu_dev, NULL);
 	if (IS_ERR(cpu_clk)) {
 		ret = PTR_ERR(cpu_clk);
-		pr_err("failed to get cpu0 clock: %d\n", ret);
+		pr_debug("failed to get cpu0 clock: %d\n", ret);
 		goto out_put_node;
 	}
 
 	ret = clk_notifier_register(cpu_clk, &hb_cpufreq_clk_nb);
 	if (ret) {
-		pr_err("failed to register clk notifier: %d\n", ret);
+		pr_debug("failed to register clk notifier: %d\n", ret);
 		goto out_put_node;
 	}
 

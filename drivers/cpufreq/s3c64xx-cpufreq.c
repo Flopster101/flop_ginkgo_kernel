@@ -70,7 +70,7 @@ static int s3c64xx_cpufreq_set_target(struct cpufreq_policy *policy,
 					    dvfs->vddarm_min,
 					    dvfs->vddarm_max);
 		if (ret != 0) {
-			pr_err("Failed to set VDDARM for %dkHz: %d\n",
+			pr_debug("Failed to set VDDARM for %dkHz: %d\n",
 			       new_freq, ret);
 			return ret;
 		}
@@ -79,7 +79,7 @@ static int s3c64xx_cpufreq_set_target(struct cpufreq_policy *policy,
 
 	ret = clk_set_rate(policy->clk, new_freq * 1000);
 	if (ret < 0) {
-		pr_err("Failed to set rate %dkHz: %d\n",
+		pr_debug("Failed to set rate %dkHz: %d\n",
 		       new_freq, ret);
 		return ret;
 	}
@@ -90,10 +90,10 @@ static int s3c64xx_cpufreq_set_target(struct cpufreq_policy *policy,
 					    dvfs->vddarm_min,
 					    dvfs->vddarm_max);
 		if (ret != 0) {
-			pr_err("Failed to set VDDARM for %dkHz: %d\n",
+			pr_debug("Failed to set VDDARM for %dkHz: %d\n",
 			       new_freq, ret);
 			if (clk_set_rate(policy->clk, old_freq * 1000) < 0)
-				pr_err("Failed to restore original clock rate\n");
+				pr_debug("Failed to restore original clock rate\n");
 
 			return ret;
 		}
@@ -115,7 +115,7 @@ static void s3c64xx_cpufreq_config_regulator(void)
 
 	count = regulator_count_voltages(vddarm);
 	if (count < 0) {
-		pr_err("Unable to check supported voltages\n");
+		pr_debug("Unable to check supported voltages\n");
 	}
 
 	if (!count)
@@ -154,13 +154,13 @@ static int s3c64xx_cpufreq_driver_init(struct cpufreq_policy *policy)
 		return -EINVAL;
 
 	if (s3c64xx_freq_table == NULL) {
-		pr_err("No frequency information for this CPU\n");
+		pr_debug("No frequency information for this CPU\n");
 		return -ENODEV;
 	}
 
 	policy->clk = clk_get(NULL, "armclk");
 	if (IS_ERR(policy->clk)) {
-		pr_err("Unable to obtain ARMCLK: %ld\n",
+		pr_debug("Unable to obtain ARMCLK: %ld\n",
 		       PTR_ERR(policy->clk));
 		return PTR_ERR(policy->clk);
 	}
@@ -169,8 +169,8 @@ static int s3c64xx_cpufreq_driver_init(struct cpufreq_policy *policy)
 	vddarm = regulator_get(NULL, "vddarm");
 	if (IS_ERR(vddarm)) {
 		ret = PTR_ERR(vddarm);
-		pr_err("Failed to obtain VDDARM: %d\n", ret);
-		pr_err("Only frequency scaling available\n");
+		pr_debug("Failed to obtain VDDARM: %d\n", ret);
+		pr_debug("Only frequency scaling available\n");
 		vddarm = NULL;
 	} else {
 		s3c64xx_cpufreq_config_regulator();
@@ -202,7 +202,7 @@ static int s3c64xx_cpufreq_driver_init(struct cpufreq_policy *policy)
 	ret = cpufreq_generic_init(policy, s3c64xx_freq_table,
 			(500 * 1000) + regulator_latency);
 	if (ret != 0) {
-		pr_err("Failed to configure frequency table: %d\n",
+		pr_debug("Failed to configure frequency table: %d\n",
 		       ret);
 		regulator_put(vddarm);
 		clk_put(policy->clk);

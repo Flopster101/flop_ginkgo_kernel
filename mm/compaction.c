@@ -1911,11 +1911,6 @@ static void compact_node(int nid)
 	}
 }
 
-#ifdef CONFIG_ZSWAP
-extern void zswap_compact(void);
-#else
-static inline void zswap_compact(void) {}
-#endif
 /* Compact all nodes in the system */
 static void compact_nodes(void)
 {
@@ -1926,8 +1921,6 @@ static void compact_nodes(void)
 
 	for_each_online_node(nid)
 		compact_node(nid);
-
-	zswap_compact();
 }
 
 static void do_compaction(struct work_struct *work)
@@ -2167,8 +2160,7 @@ int kcompactd_run(int nid)
 	if (pgdat->kcompactd)
 		return 0;
 
-	pgdat->kcompactd = kthread_run_perf_critical(cpu_lp_mask, kcompactd,
-					pgdat, "kcompactd%d", nid);
+	pgdat->kcompactd = kthread_run(kcompactd, pgdat, "kcompactd%d", nid);
 	if (IS_ERR(pgdat->kcompactd)) {
 		pr_err("Failed to start kcompactd on node %d\n", nid);
 		ret = PTR_ERR(pgdat->kcompactd);

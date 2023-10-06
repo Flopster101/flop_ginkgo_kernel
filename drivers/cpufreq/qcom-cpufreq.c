@@ -164,7 +164,7 @@ static int msm_cpufreq_init(struct cpufreq_policy *policy)
 
 	ret = cpufreq_table_validate_and_show(policy, table);
 	if (ret) {
-		pr_err("cpufreq: failed to get policy min/max\n");
+		pr_debug("cpufreq: failed to get policy min/max\n");
 		return ret;
 	}
 
@@ -341,7 +341,7 @@ static void msm_cpufreq_ready(struct cpufreq_policy *policy)
 
 			cdev[cpu] = of_cpufreq_cooling_register(np, policy);
 			if (IS_ERR(cdev[cpu])) {
-				pr_err(
+				pr_debug(
 				"running cpufreq for CPU%d without cooling dev: %ld\n",
 				cpu, PTR_ERR(cdev[cpu]));
 				cdev[cpu] = NULL;
@@ -382,7 +382,7 @@ static struct cpufreq_frequency_table *cpufreq_parse_dt(struct device *dev,
 	if (nf == 0)
 		return ERR_PTR(-EINVAL);
 
-	data = devm_kzalloc(dev, nf * sizeof(*data), GFP_KERNEL);
+	data = devm_kcalloc(dev, nf, sizeof(*data), GFP_KERNEL);
 	if (!data)
 		return ERR_PTR(-ENOMEM);
 
@@ -390,7 +390,7 @@ static struct cpufreq_frequency_table *cpufreq_parse_dt(struct device *dev,
 	if (ret)
 		return ERR_PTR(ret);
 
-	ftbl = devm_kzalloc(dev, (nf + 1) * sizeof(*ftbl), GFP_KERNEL);
+	ftbl = devm_kcalloc(dev, nf + 1, sizeof(*ftbl), GFP_KERNEL);
 	if (!ftbl)
 		return ERR_PTR(-ENOMEM);
 

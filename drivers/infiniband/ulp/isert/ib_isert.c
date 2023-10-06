@@ -181,8 +181,9 @@ isert_alloc_rx_descriptors(struct isert_conn *isert_conn)
 	u64 dma_addr;
 	int i, j;
 
-	isert_conn->rx_descs = kzalloc(ISERT_QP_MAX_RECV_DTOS *
-				sizeof(struct iser_rx_desc), GFP_KERNEL);
+	isert_conn->rx_descs = kcalloc(ISERT_QP_MAX_RECV_DTOS,
+				       sizeof(struct iser_rx_desc),
+				       GFP_KERNEL);
 	if (!isert_conn->rx_descs)
 		return -ENOMEM;
 
@@ -2652,6 +2653,8 @@ static void isert_wait_conn(struct iscsi_conn *conn)
 	isert_put_unsol_pending_cmds(conn);
 	isert_wait4cmds(conn);
 	isert_wait4logout(isert_conn);
+
+	queue_work(isert_release_wq, &isert_conn->release_work);
 }
 
 static void isert_free_conn(struct iscsi_conn *conn)

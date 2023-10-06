@@ -70,13 +70,13 @@ static int speedstep_find_register(void)
 	/* get PMBASE */
 	pci_read_config_dword(speedstep_chipset_dev, 0x40, &pmbase);
 	if (!(pmbase & 0x01)) {
-		pr_err("could not find speedstep register\n");
+		pr_debug("could not find speedstep register\n");
 		return -ENODEV;
 	}
 
 	pmbase &= 0xFFFFFFFE;
 	if (!pmbase) {
-		pr_err("could not find speedstep register\n");
+		pr_debug("could not find speedstep register\n");
 		return -ENODEV;
 	}
 
@@ -138,7 +138,7 @@ static void speedstep_set_state(unsigned int state)
 		pr_debug("change to %u MHz succeeded\n",
 			speedstep_get_frequency(speedstep_processor) / 1000);
 	else
-		pr_err("change failed - I/O error\n");
+		pr_debug("change failed - I/O error\n");
 
 	return;
 }

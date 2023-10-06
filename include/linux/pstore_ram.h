@@ -39,7 +39,6 @@ struct persistent_ram_ecc_info {
 	int ecc_size;
 	int symsize;
 	int poly;
-	uint16_t *par;
 };
 
 struct persistent_ram_zone {

@@ -269,7 +269,7 @@ static int __team_options_register(struct team *team,
 	struct team_option **dst_opts;
 	int err;
 
-	dst_opts = kzalloc(sizeof(struct team_option *) * option_count,
+	dst_opts = kcalloc(option_count, sizeof(struct team_option *),
 			   GFP_KERNEL);
 	if (!dst_opts)
 		return -ENOMEM;
@@ -2160,7 +2160,9 @@ static void team_setup(struct net_device *dev)
 
 	dev->hw_features = TEAM_VLAN_FEATURES |
 			   NETIF_F_HW_VLAN_CTAG_RX |
-			   NETIF_F_HW_VLAN_CTAG_FILTER;
+			   NETIF_F_HW_VLAN_CTAG_FILTER |
+			   NETIF_F_HW_VLAN_STAG_RX |
+			   NETIF_F_HW_VLAN_STAG_FILTER;
 
 	dev->hw_features |= NETIF_F_GSO_ENCAP_ALL;
 	dev->features |= dev->hw_features;

@@ -208,7 +208,7 @@ static int imx6q_cpufreq_probe(struct platform_device *pdev)
 
 	cpu_dev = get_cpu_device(0);
 	if (!cpu_dev) {
-		pr_err("failed to get cpu0 device\n");
+		pr_debug("failed to get cpu0 device\n");
 		return -ENODEV;
 	}
 
@@ -288,7 +288,8 @@ static int imx6q_cpufreq_probe(struct platform_device *pdev)
 	}
 
 	/* Make imx6_soc_volt array's size same as arm opp number */
-	imx6_soc_volt = devm_kzalloc(cpu_dev, sizeof(*imx6_soc_volt) * num, GFP_KERNEL);
+	imx6_soc_volt = devm_kcalloc(cpu_dev, num, sizeof(*imx6_soc_volt),
+				     GFP_KERNEL);
 	if (imx6_soc_volt == NULL) {
 		ret = -ENOMEM;
 		goto free_freq_table;

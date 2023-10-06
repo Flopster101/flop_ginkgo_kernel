@@ -38,7 +38,7 @@ static int sfi_parse_freq(struct sfi_table_header *table)
 	num_freq_table_entries = SFI_GET_NUM_ENTRIES(sb,
 			struct sfi_freq_table_entry);
 	if (num_freq_table_entries <= 1) {
-		pr_err("No p-states discovered\n");
+		pr_debug("No p-states discovered\n");
 		return -ENODEV;
 	}
 
@@ -94,8 +94,8 @@ static int __init sfi_cpufreq_init(void)
 	if (ret)
 		return ret;
 
-	freq_table = kzalloc(sizeof(*freq_table) *
-			(num_freq_table_entries + 1), GFP_KERNEL);
+	freq_table = kcalloc(num_freq_table_entries + 1, sizeof(*freq_table),
+			     GFP_KERNEL);
 	if (!freq_table) {
 		ret = -ENOMEM;
 		goto err_free_array;
