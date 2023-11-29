@@ -509,7 +509,7 @@ static ssize_t queue_dax_show(struct request_queue *q, char *page)
 }
 
 static struct queue_sysfs_entry queue_requests_entry = {
-	.attr = {.name = "nr_requests", .mode = S_IRUGO | S_IWUSR },
+	.attr = {.name = "nr_requests", .mode = S_IRUGO },
 	.show = queue_requests_show,
 	.store = queue_requests_store,
 };
