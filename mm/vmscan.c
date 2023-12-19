@@ -2714,13 +2714,9 @@ void lru_gen_del_mm(struct mm_struct *mm)
 		if (lruvec->mm_state.head != &mm->lru_gen.list)
 			continue;
 
-		/* where the current iteration continues after */
-		if (lruvec->mm_state.head == &mm->lru_gen.list)
-			lruvec->mm_state.head = lruvec->mm_state.head->prev;
-
-		/* where the last iteration ended before */
-		if (lruvec->mm_state.tail == &mm->lru_gen.list)
-			lruvec->mm_state.tail = lruvec->mm_state.tail->next;
+		lruvec->mm_state.head = lruvec->mm_state.head->next;
+		if (lruvec->mm_state.head == &mm_list->fifo)
+			WRITE_ONCE(lruvec->mm_state.seq, lruvec->mm_state.seq + 1);
 	}
 
 	list_del_init(&mm->lru_gen.list);
@@ -2906,21 +2902,22 @@ static bool iterate_mm_list(struct lruvec *lruvec, struct lru_gen_mm_walk *walk,
 			    struct mm_struct **iter)
 {
 	bool first = false;
-	bool last = false;
+	bool last = true;
 	struct mm_struct *mm = NULL;
 	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
 	struct lru_gen_mm_list *mm_list = get_mm_list(memcg);
 	struct lru_gen_mm_state *mm_state = &lruvec->mm_state;
 
 	/*
-	 * mm_state->seq is incremented after each iteration of mm_list. There
-	 * are three interesting cases for this page table walker:
-	 * 1. It tries to start a new iteration with a stale max_seq: there is
-	 *    nothing left to do.
-	 * 2. It started the next iteration: it needs to reset the Bloom filter
-	 *    so that a fresh set of PTE tables can be recorded.
-	 * 3. It ended the current iteration: it needs to reset the mm stats
-	 *    counters and tell its caller to increment max_seq.
+	 * There are four interesting cases for this page table walker:
+	 * 1. It tries to start a new iteration of mm_list with a stale max_seq;
+	 *    there is nothing to be done.
+	 * 2. It's the first of the current generation, and it needs to reset
+	 *    the Bloom filter for the next generation.
+	 * 3. It reaches the end of mm_list, and it needs to increment
+	 *    mm_state->seq; the iteration is done.
+	 * 4. It's the last of the current generation, and it needs to reset the
+	 *    mm stats counters for the next generation.
 	 */
 	if (*iter)
 		mmput_async(*iter);
@@ -2930,35 +2927,48 @@ static bool iterate_mm_list(struct lruvec *lruvec, struct lru_gen_mm_walk *walk,
 	spin_lock(&mm_list->lock);
 
 	VM_BUG_ON(mm_state->seq + 1 < walk->max_seq);
+	VM_BUG_ON(*iter && mm_state->seq > walk->max_seq);
+	VM_BUG_ON(*iter && !mm_state->nr_walkers);
 
-	if (walk->max_seq <= mm_state->seq)
+	if (walk->max_seq <= mm_state->seq) {
+		if (!*iter)
+			last = false;
 		goto done;
+	}
 
-	if (!mm_state->head)
-		mm_state->head = &mm_list->fifo;
+	if (!mm_state->nr_walkers) {
+		VM_BUG_ON(mm_state->head && mm_state->head != &mm_list->fifo);
 
-	if (mm_state->head == &mm_list->fifo)
+		mm_state->head = mm_list->fifo.next;
 		first = true;
+	}
 
-	do {
+	while (!mm && mm_state->head != &mm_list->fifo) {
+		mm = list_entry(mm_state->head, struct mm_struct, lru_gen.list);
+
 		mm_state->head = mm_state->head->next;
-		if (mm_state->head == &mm_list->fifo) {
-			WRITE_ONCE(mm_state->seq, mm_state->seq + 1);
-			last = true;
-			break;
-		}
 
-		/* force scan for those added after the last iteration */
-		if (!mm_state->tail || mm_state->tail == mm_state->head) {
-			mm_state->tail = mm_state->head->next;
+		/* full scan for those added after the last iteration */
+		if (!mm_state->tail || mm_state->tail == &mm->lru_gen.list) {
+			mm_state->tail = mm_state->head;
 			walk->full_scan = true;
 		}
 
-		mm = list_entry(mm_state->head, struct mm_struct, lru_gen.list);
 		if (should_skip_mm(mm, walk))
 			mm = NULL;
-	} while (!mm);
+	}
+
+	if (mm_state->head == &mm_list->fifo)
+		WRITE_ONCE(mm_state->seq, mm_state->seq + 1);
 done:
+	if (*iter && !mm)
+		mm_state->nr_walkers--;
+	if (!*iter && mm)
+		mm_state->nr_walkers++;
+
+	if (mm_state->nr_walkers)
+		last = false;
+
 	if (mm && first)
 		reset_bloom_filter(lruvec, walk->max_seq + 1);
 
@@ -2986,9 +2996,9 @@ static bool iterate_mm_list_nowalk(struct lruvec *lruvec, unsigned long max_seq)
 
 	VM_BUG_ON(mm_state->seq + 1 < max_seq);
 
-	if (max_seq > mm_state->seq) {
-		mm_state->head = NULL;
-		mm_state->tail = NULL;
+	if (max_seq > mm_state->seq && !mm_state->nr_walkers) {
+		VM_BUG_ON(mm_state->head && mm_state->head != &mm_list->fifo);
+
 		WRITE_ONCE(mm_state->seq, mm_state->seq + 1);
 		reset_mm_stats(lruvec, NULL, true);
 		success = true;
@@ -3584,13 +3594,7 @@ static void walk_mm(struct lruvec *lruvec, struct mm_struct *mm, struct lru_gen_
 	walk->next_addr = FIRST_USER_ADDRESS;
 
 	do {
-		DEFINE_MAX_SEQ(lruvec);
-
 		err = -EBUSY;
-
-		/* another thread might have called inc_max_seq() */
-		if (walk->max_seq != max_seq)
-			break;
 
 		/* page_update_gen() requires stable page_memcg() */
 		if (!mem_cgroup_trylock_pages(memcg))
@@ -3776,14 +3780,28 @@ static bool try_to_inc_max_seq(struct lruvec *lruvec, unsigned long max_seq,
 		success = iterate_mm_list(lruvec, walk, &mm);
 		if (mm)
 			walk_mm(lruvec, mm, walk);
+
+		cond_resched();
 	} while (mm);
 
 	free_mm_walk(walk);
 done:
-	if (success)
-		inc_max_seq(lruvec);
+	if (!success) {
+		if (!current_is_kswapd() && !sc->priority)
+			wait_event_killable(lruvec->mm_state.wait,
+					    max_seq < READ_ONCE(lrugen->max_seq));
 
-	return success;
+		return max_seq < READ_ONCE(lrugen->max_seq);
+	}
+
+	VM_BUG_ON(max_seq != READ_ONCE(lrugen->max_seq));
+
+	inc_max_seq(lruvec);
+	/* either this sees any waiters or they will see updated max_seq */
+	if (wq_has_sleeper(&lruvec->mm_state.wait))
+		wake_up_all(&lruvec->mm_state.wait);
+
+	return true;
 }
 
 static long get_nr_evictable(struct lruvec *lruvec, unsigned long max_seq,
@@ -5114,6 +5132,7 @@ void lru_gen_init_lruvec(struct lruvec *lruvec)
 		INIT_LIST_HEAD(&lrugen->lists[gen][type][zone]);
 
 	lruvec->mm_state.seq = MIN_NR_GENS;
+	init_waitqueue_head(&lruvec->mm_state.wait);
 }
 
 #ifdef CONFIG_MEMCG
