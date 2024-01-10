@@ -3848,7 +3848,6 @@ static bool age_lruvec(struct lruvec *lruvec, struct scan_control *sc, unsigned 
 	bool need_aging;
 	unsigned long nr_to_scan;
 	int swappiness = get_swappiness(lruvec, sc);
-	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
 	DEFINE_MAX_SEQ(lruvec);
 	DEFINE_MIN_SEQ(lruvec);
 
