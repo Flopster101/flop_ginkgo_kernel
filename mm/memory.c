@@ -40,6 +40,7 @@
 
 #include <linux/kernel_stat.h>
 #include <linux/mm.h>
+#include <linux/mm_inline.h>
 #include <linux/sched/mm.h>
 #include <linux/sched/coredump.h>
 #include <linux/sched/numa_balancing.h>
@@ -3162,6 +3163,27 @@ void unmap_mapping_range(struct address_space *mapping,
 }
 EXPORT_SYMBOL(unmap_mapping_range);
 
+#ifdef CONFIG_LRU_GEN
+static void lru_gen_enter_fault(struct vm_area_struct *vma)
+{
+	/* the LRU algorithm doesn't apply to sequential or random reads */
+	current->in_lru_fault = !(vma->vm_flags & (VM_SEQ_READ | VM_RAND_READ));
+}
+
+static void lru_gen_exit_fault(void)
+{
+	current->in_lru_fault = false;
+}
+#else
+static void lru_gen_enter_fault(struct vm_area_struct *vma)
+{
+}
+
+static void lru_gen_exit_fault(void)
+{
+}
+#endif /* CONFIG_LRU_GEN */
+
 /*
  * We enter with non-exclusive mmap_sem (to exclude vma changes,
  * but allow concurrent faults), and pte mapped but not yet locked.
@@ -3381,7 +3403,8 @@ int do_swap_page(struct vm_fault *vmf)
 	} else {
 		do_page_add_anon_rmap(page, vma, vmf->address, exclusive);
 		mem_cgroup_commit_charge(page, memcg, true, false);
-		activate_page(page);
+		if (!lru_gen_enabled())
+			activate_page(page);
 	}
 
 	swap_free(entry);
@@ -4535,6 +4558,9 @@ static int __handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
 	return handle_pte_fault(&vmf);
 }
 
+static void lru_gen_enter_fault(struct vm_area_struct *vma);
+static void lru_gen_exit_fault(void);
+
 #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
 
 #ifndef __HAVE_ARCH_PTE_SPECIAL
@@ -4732,7 +4758,9 @@ int __handle_speculative_fault(struct mm_struct *mm, unsigned long address,
 	}
 
 	mem_cgroup_enter_user_fault();
+        lru_gen_enter_fault(vmf.vma);
 	ret = handle_pte_fault(&vmf);
+        lru_gen_exit_fault();
 	mem_cgroup_exit_user_fault();
 
 	/*
@@ -4824,10 +4852,14 @@ int handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
 	if (flags & FAULT_FLAG_USER)
 		mem_cgroup_enter_user_fault();
 
+	lru_gen_enter_fault(vma);
+
 	if (unlikely(is_vm_hugetlb_page(vma)))
 		ret = hugetlb_fault(vma->vm_mm, vma, address, flags);
 	else
 		ret = __handle_mm_fault(vma, address, flags);
+
+	lru_gen_exit_fault();
 
 	if (flags & FAULT_FLAG_USER) {
 		mem_cgroup_exit_user_fault();
