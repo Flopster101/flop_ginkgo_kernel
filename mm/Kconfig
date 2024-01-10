@@ -877,3 +877,12 @@ config LRU_GEN_STATS
 
 	  This option has a per-memcg and per-node memory overhead.
 # }
+
+config OPLUS_MM_HACKS
+	bool "Enable oplus memory management hacks"
+	default n
+	help
+	  Improves memory management drastically as these hacks are used in Oplus devices.
+	  Tested on devices made by OEMs like Motorola and Samsung.
+
+	  If unsure, say "n".
