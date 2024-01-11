@@ -882,7 +882,9 @@ int arch_add_memory(int nid, u64 start, u64 size, bool want_memblock)
 	 */
 	memblock_mark_nomap(start, 1<<PAGE_SHIFT);
 
+#ifdef CONFIG_MEMORY_HOTPLUG
 	pgdat = NODE_DATA(nid);
+#endif
 
 	ret = __add_pages(nid, start_pfn, nr_pages, want_memblock);
 
