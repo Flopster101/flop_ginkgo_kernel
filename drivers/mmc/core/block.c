@@ -1285,6 +1285,7 @@ static int mmc_blk_part_switch_post(struct mmc_card *card,
 static inline int mmc_blk_part_switch(struct mmc_card *card,
 				      unsigned int part_type)
 {
+	const unsigned int mask = EXT_CSD_PART_CONFIG_ACC_RPMB;
 	int ret = 0;
 	struct mmc_blk_data *main_md = dev_get_drvdata(&card->dev);
 
@@ -1308,6 +1309,14 @@ static inline int mmc_blk_part_switch(struct mmc_card *card,
 
 		part_config &= ~EXT_CSD_PART_CONFIG_ACC_MASK;
 		part_config |= part_type;
+
+		if (mask == (part_config & EXT_CSD_PART_CONFIG_ACC_MASK)) {
+			ret = mmc_flush_cache(card);
+			if (ret) {
+				pr_err("RPMB:flush cache failed\n");
+				return ret;
+			}
+		}
 
 		ret = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
 				 EXT_CSD_PART_CONFIG, part_config,
