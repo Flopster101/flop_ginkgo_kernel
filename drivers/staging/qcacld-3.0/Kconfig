@@ -1,0 +1,20 @@
+comment "Qualcomm Atheros CLD WLAN module"
+
+config QCA_CLD_WLAN
+	tristate "Qualcomm Atheros CLD WLAN module"
+	depends on CFG80211 && CLD_LL_CORE
+	default n
+	help
+	  Add support for the Qualcomm Atheros CLD WLAN module
+
+config QCA_CLD_WLAN_PROFILE
+	string "Configuration profile for Qualcomm Atheros CLD WLAN module"
+	depends on QCA_CLD_WLAN
+	default "qca6174" if ARCH_MDM9607 || ARCH_MDM9650 || ARCH_SDXPOORWILLS
+	default "qca6390" if ARCH_KONA
+	default "default"
+	help
+	  Specify which configuration profile to be used for building
+	  this module.
+
+	  Profiles are located at drivers/staging/qcacld-3.0/configs.
