@@ -784,6 +784,7 @@ config NR_CPUS
 
 config LITTLE_CPU_MASK
 	int "Bitmask of available LITTLE CPUs"
+	default 0
 	help
 	  This is a bitmask specifying which of the CPUs are LITTLE in a
 	  heterogeneous system. Use 0 if you are unsure, which just results in
@@ -791,6 +792,7 @@ config LITTLE_CPU_MASK
 
 config BIG_CPU_MASK
 	int "Bitmask of available big CPUs"
+	default 0
 	help
 	  This is a bitmask specifying which of the CPUs are big in a
 	  heterogeneous system. Use 0 if you are unsure, which just results in
