@@ -175,7 +175,7 @@ int vm_swappiness = 60;
 /*
  * Direct reclaim swappiness, values range from 0 .. 60. Higher means more swappy.
  */
-int direct_vm_swappiness = 60;
+int direct_vm_swappiness = 20;
 #endif /* CONFIG_OPLUS_MM_HACKS */
 
 /*
