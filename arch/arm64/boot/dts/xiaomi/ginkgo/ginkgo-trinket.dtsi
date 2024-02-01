@@ -27,8 +27,7 @@
 		fstab {
 			vendor {
 				dev = "/dev/block/platform/soc/4744000.sdhci/by-name/vendor";
-				fsmgr_flags = "wait";
-				status = "disabled";
+				fsmgr_flags = "wait,first_stage_mount";
 			};
 		};
 	};
