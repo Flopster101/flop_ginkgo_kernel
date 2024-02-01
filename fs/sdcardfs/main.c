@@ -469,9 +469,15 @@ static struct file_system_type sdcardfs_fs_type = {
 };
 MODULE_ALIAS_FS(SDCARDFS_NAME);
 
+extern bool plain_partitions;
 static int __init init_sdcardfs_fs(void)
 {
 	int err;
+
+	if (!plain_partitions) {
+		pr_info("Dynamic partitions ROM detected! Killing SDCardFS\n");
+		return 0;
+	}
 
 	pr_info("Registering sdcardfs " SDCARDFS_VERSION "\n");
 
