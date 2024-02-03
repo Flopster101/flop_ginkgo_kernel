@@ -52,13 +52,12 @@ static inline int rt_mutex_has_waiters(struct rt_mutex *lock)
 static inline struct rt_mutex_waiter *
 rt_mutex_top_waiter(struct rt_mutex *lock)
 {
-	struct rb_node *leftmost = rb_first_cached(&lock->waiters);
-	struct rt_mutex_waiter *w = NULL;
+	struct rt_mutex_waiter *w;
 
-	if (leftmost) {
-		w = rb_entry(leftmost, struct rt_mutex_waiter, tree_entry);
-		BUG_ON(w->lock != lock);
-	}
+	w = rb_entry(lock->waiters.rb_leftmost,
+		     struct rt_mutex_waiter, tree_entry);
+	BUG_ON(w->lock != lock);
+
 	return w;
 }
 
