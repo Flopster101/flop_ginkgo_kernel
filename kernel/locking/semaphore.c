@@ -55,7 +55,6 @@ void down(struct semaphore *sem)
 {
 	unsigned long flags;
 
-	might_sleep();
 	raw_spin_lock_irqsave(&sem->lock, flags);
 	if (likely(sem->count > 0))
 		sem->count--;
@@ -79,7 +78,6 @@ int down_interruptible(struct semaphore *sem)
 	unsigned long flags;
 	int result = 0;
 
-	might_sleep();
 	raw_spin_lock_irqsave(&sem->lock, flags);
 	if (likely(sem->count > 0))
 		sem->count--;
@@ -106,7 +104,6 @@ int down_killable(struct semaphore *sem)
 	unsigned long flags;
 	int result = 0;
 
-	might_sleep();
 	raw_spin_lock_irqsave(&sem->lock, flags);
 	if (likely(sem->count > 0))
 		sem->count--;
@@ -161,7 +158,6 @@ int down_timeout(struct semaphore *sem, long timeout)
 	unsigned long flags;
 	int result = 0;
 
-	might_sleep();
 	raw_spin_lock_irqsave(&sem->lock, flags);
 	if (likely(sem->count > 0))
 		sem->count--;
