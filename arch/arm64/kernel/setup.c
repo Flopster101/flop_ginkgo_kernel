@@ -84,9 +84,6 @@ EXPORT_SYMBOL(boot_reason);
 unsigned int cold_boot;
 EXPORT_SYMBOL(cold_boot);
 
-bool plain_partitions = false;
-EXPORT_SYMBOL(plain_partitions);
-
 /*
  * Standard memory resources
  */
@@ -285,14 +282,6 @@ const char * __init __weak arch_read_machine_name(void)
 {
 	return of_flat_dt_get_machine_name();
 }
-
-static int __init plain_partitions_param(char *__unused)
-{
-	plain_partitions = true;
-	return 1;
-}
-
-__setup("plain_partitions", plain_partitions_param);
 
 static void __init setup_machine_fdt(phys_addr_t dt_phys)
 {
