@@ -157,7 +157,7 @@ struct scan_control {
 /*
  * From 0 .. 100.  Higher means more swappy.
  */
-int vm_swappiness = 80;
+int vm_swappiness = 100;
 
 #ifdef CONFIG_OPLUS_MM_HACKS
 /*
