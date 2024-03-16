@@ -325,10 +325,9 @@ static void cpuboost_input_event(struct input_handle *handle,
 	if (queuing_blocked(&cpu_boost_worker, &input_boost_work))
 		return;
 
-	if ((type == EV_KEY && code == KEY_POWER) ||
-		(type == EV_KEY && code == KEY_WAKEUP)) {
+	if (type == EV_KEY && code == KEY_POWER)
 		kthread_queue_work(&cpu_boost_worker, &powerkey_input_boost_work);
-	} else
+	else
 		kthread_queue_work(&cpu_boost_worker, &input_boost_work);
 
 	last_input_time = ktime_to_us(ktime_get());
