@@ -1802,7 +1802,6 @@ struct file_operations {
 			u64);
 	ssize_t (*dedupe_file_range)(struct file *, u64, u64, struct file *,
 			u64);
-	int (*fadvise)(struct file *, loff_t, loff_t, int);
 } __randomize_layout;
 
 struct inode_operations {
@@ -3551,9 +3550,5 @@ static inline int inode_drain_writes(struct inode *inode)
 	inode_dio_wait(inode);
 	return filemap_write_and_wait(inode->i_mapping);
 }
-
-/* mm/fadvise.c */
-extern int vfs_fadvise(struct file *file, loff_t offset, loff_t len,
-		       int advice);
 
 #endif /* _LINUX_FS_H */
