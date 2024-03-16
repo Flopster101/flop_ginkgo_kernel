@@ -1290,7 +1290,8 @@ SYSCALL_DEFINE5(process_madvise, int, pidfd, const struct iovec __user *, vec,
 		iov_iter_advance(&iter, iovec.iov_len);
 	}
 
-	ret = (total_len - iov_iter_count(&iter)) ? : ret;
+	if (ret == 0)
+		ret = total_len - iov_iter_count(&iter);
 
 release_mm:
 	mmput(mm);
