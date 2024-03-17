@@ -50,6 +50,7 @@
 #include <linux/sched/mm.h>
 #include <linux/proc_ns.h>
 #include <linux/mount.h>
+#include <linux/binfmts.h>
 
 #include "internal.h"
 
@@ -455,6 +456,9 @@ static int perf_sample_allowed_ns __read_mostly =
 static void update_perf_cpu_limits(void)
 {
 	u64 tmp = perf_sample_period_ns;
+
+	if (task_is_booster(current))
+		sysctl_perf_cpu_time_max_percent = DEFAULT_CPU_TIME_MAX_PERCENT;
 
 	tmp *= sysctl_perf_cpu_time_max_percent;
 	tmp = div_u64(tmp, 100);
