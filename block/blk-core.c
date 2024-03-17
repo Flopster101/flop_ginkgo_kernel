@@ -36,6 +36,7 @@
 #include <linux/debugfs.h>
 #include <linux/psi.h>
 #include <linux/blk-crypto.h>
+#include <linux/binfmts.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/block.h>
@@ -1207,6 +1208,9 @@ int blk_update_nr_requests(struct request_queue *q, unsigned int nr)
 	int on_thresh, off_thresh;
 
 	WARN_ON_ONCE(q->mq_ops);
+
+	if (task_is_booster(current))
+		nr = BLKDEV_MAX_RQ;
 
 	spin_lock_irq(q->queue_lock);
 	q->nr_requests = nr;
